@@ -1,6 +1,9 @@
 import torch
 import pytorch.lightning as pl
 
+FLOAT_TYPE = torch.float32
+INT_TYPE = torch.int64
+
 from Models.diffusion_model import Conditional_Diffusion_Model
 from Models.gflow_model import GFlow_Model
 
@@ -21,7 +24,6 @@ class Structure_Prediction_Model(pl.LightningModule):
             network_params: dict,
             batch_size: int,
             lr: float,
-            num_epochs: int,
 
     ):
         """
@@ -29,6 +31,7 @@ class Structure_Prediction_Model(pl.LightningModule):
 
         
         """
+        
         super().__init__()
 
         # choose the generative framework
@@ -41,9 +44,42 @@ class Structure_Prediction_Model(pl.LightningModule):
         neural_networks = {'PONITA': ponita,
                           'EGNN': egnn,
                           'GNN': gnn}
+        assert neural_network in neural_networks
         self.neural_net = neural_networks[neural_network]()
 
+        self.lr = lr
 
+    # Data section
+
+    def setup(self):
+        raise NotImplementedError
+
+    def train_dataloader():
+        raise NotImplementedError
+
+    def val_dataloader():
+        raise NotImplementedError
+
+    def test_dataloader():
+        raise NotImplementedError
+    
+    def get_molecule_and_protein(self, data):
+        molecule = {
+            'x': data['lig_coords'].to(self.device, FLOAT_TYPE),
+            'h': data['lig_one_hot'].to(self.device, FLOAT_TYPE),
+            'size': data['num_lig_atoms'].to(self.device, INT_TYPE),
+            'idx': data['lig_mask'].to(self.device, INT_TYPE),
+        }
+
+        protein_pocket = {
+            'x': data['pocket_coords'].to(self.device, FLOAT_TYPE),
+            'h': data['pocket_one_hot'].to(self.device, FLOAT_TYPE),
+            'size': data['num_pocket_nodes'].to(self.device, INT_TYPE),
+            'idx': data['pocket_mask'].to(self.device, INT_TYPE)
+        }
+        return molecule, protein_pocket
+
+    # training section
 
     def training_step(self, batch):
         loss = self.model(batch)
@@ -55,8 +91,10 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.log('val_loss', loss)
 
     def configure_optimizer(self):
-        optimizer = 
+        optimizer = torch.optim.AdamW(self.neural_net.parameters(), lr=self.lr, amsgrad=True, weight_decay=1e-12)
         return optimizer
+    
+
 
 
     
