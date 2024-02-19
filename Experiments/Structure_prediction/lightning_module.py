@@ -7,7 +7,7 @@ INT_TYPE = torch.int64
 from Models.diffusion_model import Conditional_Diffusion_Model
 from Models.gflow_model import GFlow_Model
 
-from Models.architectures import ponita, egnn, gnn 
+from Models.architecture import NN_Model
 
 """
 This file implements the 3D-structure prediction for a moelcule 
@@ -41,11 +41,9 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.model = frameworks[generative_model]()
 
         # choose the neural net architecture
-        neural_networks = {'PONITA': ponita,
-                          'EGNN': egnn,
-                          'GNN': gnn}
-        assert neural_network in neural_networks
-        self.neural_net = neural_networks[neural_network]()
+        self.neural_net = NN_Model(
+            # model parameters
+        )
 
         self.lr = lr
 
