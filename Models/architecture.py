@@ -3,6 +3,8 @@ import numpy as np
 import torch.nn as nn
 from torch_scatter import scatter_mean
 
+from torch_geometric.data import Data, Batch
+
 from Models.architectures.egnn import EGNN, GNN
 from Models.architectures.ponita.models.ponita import Ponita
 
@@ -19,20 +21,25 @@ class NN_Model(nn.Module):
             network_params,
             num_atoms: int,
             num_residues: int,
+            conditioned_on_time: bool,
             joint_dim: int,
             hidden_dim: int,
             num_layers: int,
             pocket_position_fixed: bool,
-            # device, TODO: add device handling
+            device: str,
 
+            # not sure if I want them
+            edge_embedding_dim: int,
     ):
         self.architecture = architecture
         self.x_dim = 3
         self.pocket_position_fixed = pocket_position_fixed
+        self.conditioned_on_time = conditioned_on_time
+
+        if conditioned_on_time:
+            joint_dim += 1
 
         # possible to use edge_embedding if I want to distinguish between molecule-moelcule, pocket-molecule edges, usw.
-
-        # possible to condition on time (default is True)
 
         if architecture == 'ponita':
 
@@ -45,9 +52,9 @@ class NN_Model(nn.Module):
             self.residue_decoder = nn.Linear(joint_dim, num_residues)
 
             # dimensions for ponita model
-            in_channels_scalar = joint_dim # + 1 for time
+            in_channels_scalar = joint_dim
             in_channels_vec = 0
-            # really unsure what to use here
+            # TODO: check how to properly use scalar vs vector outputs
             out_channels_scalar = joint_dim # updated features
             out_channels_vec = 1 # displacment vector
 
@@ -68,40 +75,57 @@ class NN_Model(nn.Module):
             
         elif architecture == 'egnn' or 'gnn':
 
+            # edge embedding
+            self.edge_embedding_dim = network_params.edge_embedding_dim
+            if self.edge_embedding_dim is not None: 
+                self.edge_embedding = nn.Embedding(self.x_dim, self.edge_embedding_dim)
+            else: 
+                self.edge_embedding = None
+            self.edge_embedding_dim = 0 if edge_embedding_dim.edge_nf is None else self.edge_embedding_dim
+
             # same encoder, decoders as in [Schneuing et al. 2023]
             self.atom_encoder = nn.Sequential(
                 nn.Linear(num_atoms, 2 * num_atoms),
-                nn.SiLU(),
+                network_params.act_fn,
                 nn.inear(2 * num_atoms, joint_dim)
             )
 
             self.atom_decoder = nn.Sequential(
                 nn.Linear(joint_dim, 2 * num_atoms),
-                nn.SiLU(),
+                network_params.act_fn,
                 nn.Linear(2 * num_atoms, num_atoms)
             )
 
             self.residue_encoder = nn.Sequential(
                 nn.Linear(num_residues, 2 * num_residues),
-                nn.SiLU(),
+                network_params.act_fn,
                 nn.Linear(2 * num_residues, joint_dim)
             )
 
             self.residue_decoder = nn.Sequential(
                 nn.Linear(joint_dim, 2 * num_residues),
-                nn.SiLU(),
+                network_params.act_fn,
                 nn.Linear(2 * num_residues, num_residues)
             )
 
             if architecture == 'egnn':
 
-                # TODO: initialize EGNN
-                self.egnn = EGNN()
+                self.egnn = EGNN(in_node_nf=joint_dim, in_edge_nf=self.edge_embedding_dim,
+                                 hidden_nf=hidden_dim, device=device, act_fn=network_params.act_fn,
+                                 n_layers=num_layers, attention=network_params.attention, tanh=network_params.tanh,
+                                 norm_constant=network_params.norm_constant,
+                                 inv_sublayers=network_params.inv_sublayers, sin_embedding=network_params.sin_embedding,
+                                 normalization_factor=network_params.normalization_factor,
+                                 aggregation_method=network_params.aggregation_method,
+                                 reflection_equiv=network_params.reflection_equivariant)
 
             else:
                 
-                # TODO: initialize GNN
-                self.gnn = GNN()
+                self.gnn = GNN(in_node_nf=joint_dim + self.x_dim, in_edge_nf=self.edge_embedding_dim,
+                               hidden_nf=hidden_dim, out_node_nf=self.x_dim + joint_dim,
+                               device=device, act_fn=network_params.act_fn, n_layers=num_layers,
+                               attention=network_params.attention, normalization_factor=network_params.normalization_factor,
+                               aggregation_method=network_params.aggregation_method)
 
         else:
             raise Exception(f"Wrong architecture {architecture}")
@@ -124,27 +148,53 @@ class NN_Model(nn.Module):
                 epsilon_hat_pro [batch_node_dim_pro, x + num_residues]
         '''
 
+        idx_joint = torch.cat(molecule_idx, protein_pocket_idx, dim=0)
+        x_mol = z_t_mol[:,:self.x_dim]
+        x_pro = z_t_pro[:,:self.x_dim]
+
         # add edges to the graph
-        # TODO: add function for generating edges
-        edges = None
+        edges = self.get_edges(molecule_idx, protein_pocket_idx, x_mol, x_pro)
+        assert torch.all(idx_joint[edges[0]] == idx_joint[edges[1]])
 
         if self.architecture == 'ponita':
-             
-            # TODO: implement step 1-6 for ponita
 
-            # (1) need z_t_mol and z_t_pro to be of the same size but no nolinear embedding
+            # (1) need z_t_mol and z_t_pro to be of the same size but no nonlinear embedding
+            h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:])
+            h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
 
-            # (2) need to save [x, h, edges] as [graph.pos, graph.x, graph.edge_index]
-            graph = None
+            # (2) add time conditioning
+            if self.condition_time:
+                h_time_mol = t[molecule_idx]
+                h_time_pro = t[protein_pocket_idx]
+                h_mol = torch.cat([h_mol, h_time_mol], dim=1)
+                h_mol = torch.cat([h_pro, h_time_pro], dim=1)
 
-            # (3) add time conditioning
+            # (3) need to save [x, h, edges] as [graph.pos, graph.x, graph.edge_index]
+            # (might want to make a helper function for this)
+            _, counts_mol = torch.unique(molecule_idx, return_counts=True)
+            _, counts_pro = torch.unique(protein_pocket_idx, return_counts=True)
+            h_mol_split = torch.split(h_mol, counts_mol.tolist()) # list([graph_num_nodes, num_atoms], len(batch_size))
+            h_pro_split = torch.split(h_pro, counts_pro.tolist()) # list([graph_num_nodes, num_residues], len(batch_size))
+            x_mol_split = torch.split(x_mol, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
+            x_pro_split = torch.split(x_pro, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
+            h_split = [torch.cat(h_mol_split[i], h_pro_split[i], dim=0) for i in range(len(h_mol_split))]
+            x_split = [torch.cat(x_mol_split[i], x_pro_split[i], dim=0) for i in range(len(x_mol_split))]
 
-            # (4) choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
-            pocket_position_fixed = None if self.pocket_position_fixed \
-                else torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
+            graphs = [Data(x=h_split[i], pos=x_split[i]) for i in range(len(h_mol_split))]
+            batched_graph = Batch.from_data_list(graphs)
+            # add edge_index
+            # TODO: make sure that adding edge_index works like that
+            batched_graph.edge_index = edges
+
+            # (4) TODO: choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
+            if self.pocket_position_fixed:
+                raise NotImplementedError
+                pocket_position_fixed = torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
+            else:
+                pocket_position_fixed = None
 
             # (5) ponita forward pass (x_new could also be the displacment vector directly)
-            h_new, x_new = self.ponita(graph)
+            h_new, x_new = self.ponita(batched_graph)
 
             # (6) calculate displacement vectors (possibly not necessary see step 5.)
             displacement_vec = (x_new - x_joint)
@@ -159,12 +209,23 @@ class NN_Model(nn.Module):
             # combine molecule and protein in joint space
             x_joint = torch.cat(z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim], dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
             h_joint = torch.cat(h_mol, h_pro, dim=0) # [batch_node_dim_mol + batch_node_dim_pro, joint_dim]
-            idx_joint = torch.cat(molecule_idx, protein_pocket_idx, dim=0)
 
-            # TODO: add time conditioning (1)
+            # add time conditioning
+            if self.conditioned_on_time:
+                h_time = t[idx_joint]
+                h = torch.cat([h, h_time], dim=1)
 
-            # TODO: add edge embedding
-            edge_types = None
+            # add edge embedding and types
+            if self.edge_embedding_dim > 0:
+                # 0: ligand-pocket, 1: ligand-ligand, 2: pocket-pocket
+                edge_types = torch.zeros(edges.size(1), dtype=int, device=edges.device)
+                edge_types[(edges[0] < len(molecule_idx)) & (edges[1] < len(molecule_idx))] = 1
+                edge_types[(edges[0] >= len(molecule_idx)) & (edges[1] >= len(molecule_idx))] = 2
+
+                # Learnable embedding
+                edge_types = self.edge_embedding(edge_types)
+            else:
+                edge_types = None
 
             if self.architecture == 'egnn':
 
@@ -180,7 +241,7 @@ class NN_Model(nn.Module):
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
 
-            else:
+            elif self.architecture == 'gnn':
 
                 # GNN
                 x_h_joint = torch.cat([x_joint, h_joint], dim=1)
@@ -188,11 +249,16 @@ class NN_Model(nn.Module):
                 displacement_vec = out[:, :self.x_dim]
                 h_new = out[:, self.x_dim:]
 
+            else:
+                raise Exception(f"Wrong architecture {self.architecture}")
 
         else:
             raise Exception(f"Wrong architecture {self.architecture}")
         
-        # TODO: add time conditioning (2)
+        # remove time dim
+        if self.condition_time:
+            # Slice off last dimension which represented time.
+            h_new = h_new[:, :-1]
                 
         # decode h_new
         h_new_mol = self.atom_decoder(h_new[:len(molecule_idx)])
@@ -210,3 +276,27 @@ class NN_Model(nn.Module):
         epsilon_hat_pro = torch.cat(displacement_vec[len(molecule_idx):], h_new_pro, dim=1)
 
         return epsilon_hat_mol, epsilon_hat_pro
+    
+    def get_edges(self, batch_mask_ligand, batch_mask_pocket, x_ligand, x_pocket): 
+        '''
+        function copied from [Schneuing et al. 2023]
+        -> need to write my own function
+        ''' 
+        adj_ligand = batch_mask_ligand[:, None] == batch_mask_ligand[None, :]
+        adj_pocket = batch_mask_pocket[:, None] == batch_mask_pocket[None, :]
+        adj_cross = batch_mask_ligand[:, None] == batch_mask_pocket[None, :]
+
+        if self.edge_cutoff_l is not None:
+            adj_ligand = adj_ligand & (torch.cdist(x_ligand, x_ligand) <= self.edge_cutoff_l)
+
+        if self.edge_cutoff_p is not None:
+            adj_pocket = adj_pocket & (torch.cdist(x_pocket, x_pocket) <= self.edge_cutoff_p)
+
+        if self.edge_cutoff_i is not None:
+            adj_cross = adj_cross & (torch.cdist(x_ligand, x_pocket) <= self.edge_cutoff_i)
+
+        adj = torch.cat((torch.cat((adj_ligand, adj_cross), dim=1),
+                         torch.cat((adj_cross.T, adj_pocket), dim=1)), dim=0)
+        edges = torch.stack(torch.where(adj), dim=0)
+
+        return edges
