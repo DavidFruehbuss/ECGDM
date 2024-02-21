@@ -1,0 +1,78 @@
+# Logging
+logdir: 'Experiments/Structure_prediction/Logs/MOAD_egnn_1'
+project: Structur_prediction
+run_name: 'SP_MOAD_egnn_1'
+entity: 'neuro-ai-scientist'
+
+# Training
+max_epochs: 1000
+device: 'gpu'
+gpus: 1
+
+batch_size: 16,
+lr: 5.0e-4,
+num_workers: 1
+
+# Dataset
+dataset: 'MOAD'
+data_dir: 'Data/Ligand_data/MOAD'
+dataset_params:
+  num_atoms:
+  num_residues:
+
+generative_model: 'conditional_diffusion'
+generative_model_params:
+  timesteps: 500
+
+architcture: 'egnn',
+network_params: 
+  # general network parameters
+  conditioned_on_time: True
+  joint_dim: 128
+  hidden_dim: 192
+  num_layers: 6
+  pocket_position_fixed: True
+  # edges
+  edge_embedding_dim: 8
+  edge_cutoff_ligand: null
+  edge_cutoff_pocket: 0.8
+  edge_cutoff_interaction: 1.4
+  # egnn specific
+  attention: True
+  tanh: True
+  norm_constant: 1
+  inv_sublayers: 1
+  sin_embedding: False
+  normalization_factor: 100
+  aggregation_method: 'sum'
+  reflection_equivariant: False
+
+# Eval
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
