@@ -22,22 +22,18 @@ if __name__ == "__main__":
         else:
             args[key] = value
 
-    
-    # dataset = 'pmhc'
-    # generative_model = 'conditional_diffusion'
-    # neural_network = 'PONITA'
-    # network_params = {}
-    # batch_size = 64
-    # lr = 1e-3
-    # num_epochs = 1000
-
+    # lightning module
     model = Structure_Prediction_Model(
                 args.dataset,
+                args.data_dir,
+                args.dataset_params,
                 args.generative_model,
+                args.generative_model_params,
                 args.neural_network,
                 args.network_params,
                 args.batch_size,
-                args.lr
+                args.lr,
+                args.device
     )
 
     # wandb logger

@@ -21,23 +21,26 @@ class NN_Model(nn.Module):
             network_params,
             num_atoms: int,
             num_residues: int,
-            conditioned_on_time: bool,
-            joint_dim: int,
-            hidden_dim: int,
-            num_layers: int,
-            pocket_position_fixed: bool,
             device: str,
-
-            # not sure if I want them
-            edge_embedding_dim: int,
     ):
         self.architecture = architecture
         self.x_dim = 3
-        self.pocket_position_fixed = pocket_position_fixed
-        self.conditioned_on_time = conditioned_on_time
+        self.act_fn = nn.SiLU()
 
-        if conditioned_on_time:
+        self.joint_dim = network_params.joint_dim
+        self.hidden_dim = network_params.hidden_dim
+        self.num_layers = network_params.num_layers
+        self.pocket_position_fixed = network_params.pocket_position_fixed
+        self.conditioned_on_time = network_params.conditioned_on_time
+
+        if self.conditioned_on_time:
             joint_dim += 1
+
+        # edge parameters
+        self.edge_embedding_dim = network_params.edge_embedding_dim
+        self.edge_cutoff_l = network_params.edge_cutoff_ligand
+        self.edge_cutoff_p = network_params.edge_cutoff_pocket
+        self.edge_cutoff_i = network_params.edge_cutoff_interaction
 
         # possible to use edge_embedding if I want to distinguish between molecule-moelcule, pocket-molecule edges, usw.
 
@@ -59,9 +62,9 @@ class NN_Model(nn.Module):
             out_channels_vec = 1 # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
-                            hidden_dim,
+                            self.hidden_dim,
                             out_channels_scalar,
-                            num_layers,
+                            self.num_layers,
                             output_dim_vec=out_channels_vec,
                             radius=network_params.radius,
                             num_ori=network_params.num_ori,
@@ -81,38 +84,38 @@ class NN_Model(nn.Module):
                 self.edge_embedding = nn.Embedding(self.x_dim, self.edge_embedding_dim)
             else: 
                 self.edge_embedding = None
-            self.edge_embedding_dim = 0 if edge_embedding_dim.edge_nf is None else self.edge_embedding_dim
+            self.edge_embedding_dim = 0 if self.edge_embedding_dim is None else self.edge_embedding_dim
 
             # same encoder, decoders as in [Schneuing et al. 2023]
             self.atom_encoder = nn.Sequential(
                 nn.Linear(num_atoms, 2 * num_atoms),
-                network_params.act_fn,
+                self.act_fn,
                 nn.inear(2 * num_atoms, joint_dim)
             )
 
             self.atom_decoder = nn.Sequential(
                 nn.Linear(joint_dim, 2 * num_atoms),
-                network_params.act_fn,
+                self.act_fn,
                 nn.Linear(2 * num_atoms, num_atoms)
             )
 
             self.residue_encoder = nn.Sequential(
                 nn.Linear(num_residues, 2 * num_residues),
-                network_params.act_fn,
+                self.act_fn,
                 nn.Linear(2 * num_residues, joint_dim)
             )
 
             self.residue_decoder = nn.Sequential(
                 nn.Linear(joint_dim, 2 * num_residues),
-                network_params.act_fn,
+                self.act_fn,
                 nn.Linear(2 * num_residues, num_residues)
             )
 
             if architecture == 'egnn':
 
                 self.egnn = EGNN(in_node_nf=joint_dim, in_edge_nf=self.edge_embedding_dim,
-                                 hidden_nf=hidden_dim, device=device, act_fn=network_params.act_fn,
-                                 n_layers=num_layers, attention=network_params.attention, tanh=network_params.tanh,
+                                 hidden_nf=self.hidden_dim, device=device, act_fn=self.act_fn,
+                                 n_layers=self.num_layers, attention=network_params.attention, tanh=network_params.tanh,
                                  norm_constant=network_params.norm_constant,
                                  inv_sublayers=network_params.inv_sublayers, sin_embedding=network_params.sin_embedding,
                                  normalization_factor=network_params.normalization_factor,
@@ -122,8 +125,8 @@ class NN_Model(nn.Module):
             else:
                 
                 self.gnn = GNN(in_node_nf=joint_dim + self.x_dim, in_edge_nf=self.edge_embedding_dim,
-                               hidden_nf=hidden_dim, out_node_nf=self.x_dim + joint_dim,
-                               device=device, act_fn=network_params.act_fn, n_layers=num_layers,
+                               hidden_nf=self.hidden_dim, out_node_nf=self.x_dim + joint_dim,
+                               device=device, act_fn=self.act_fn, n_layers=self.num_layers,
                                attention=network_params.attention, normalization_factor=network_params.normalization_factor,
                                aggregation_method=network_params.aggregation_method)
 
@@ -170,7 +173,7 @@ class NN_Model(nn.Module):
                 h_mol = torch.cat([h_pro, h_time_pro], dim=1)
 
             # (3) need to save [x, h, edges] as [graph.pos, graph.x, graph.edge_index]
-            # (might want to make a helper function for this)
+            # (might want to make a helper function for this, can use molecule['size'] object)
             _, counts_mol = torch.unique(molecule_idx, return_counts=True)
             _, counts_pro = torch.unique(protein_pocket_idx, return_counts=True)
             h_mol_split = torch.split(h_mol, counts_mol.tolist()) # list([graph_num_nodes, num_atoms], len(batch_size))
