@@ -3,7 +3,7 @@ from argparse import Namespace
 import yaml
 
 import pytorch_lightning as pl
-from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 
 if __name__ == "__main__":
 
