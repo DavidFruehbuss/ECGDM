@@ -59,7 +59,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
     def __init__(
         self,
-        neural_net: nn.Modules,
+        neural_net: nn.Module,
         timesteps: int,
         num_atoms: int,
         num_residues: int,
