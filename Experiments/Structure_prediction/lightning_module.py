@@ -9,7 +9,7 @@ INT_TYPE = torch.int64
 from Data.Ligand_data.dataset_ligand import ProcessedLigandPocketDataset
 
 from Models.diffusion_model import Conditional_Diffusion_Model
-from Models.gflow_model import GFlow_Model
+# from Models.gflow_model import GFlow_Model
 
 from Models.architecture import NN_Model
 
