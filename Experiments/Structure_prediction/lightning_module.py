@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-import pytorch.lightning as pl
+import pytorch_lightning as pl
 from pathlib import Path
 
 FLOAT_TYPE = torch.float32
