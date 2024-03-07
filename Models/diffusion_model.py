@@ -48,7 +48,7 @@ after concatination:
 
 """
 
-class Conditional_Diffusion_Model(nn.Modules):
+class Conditional_Diffusion_Model(nn.Module):
 
     """
     Conditional Denoising Diffusion Model
