@@ -99,7 +99,7 @@ class NN_Model(nn.Module):
             self.atom_encoder = nn.Sequential(
                 nn.Linear(num_atoms, 2 * num_atoms),
                 self.act_fn,
-                nn.inear(2 * num_atoms, self.joint_dim)
+                nn.Linear(2 * num_atoms, self.joint_dim)
             )
 
             self.atom_decoder = nn.Sequential(
