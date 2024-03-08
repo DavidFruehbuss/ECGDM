@@ -43,7 +43,7 @@ if __name__ == "__main__":
         project=args.project,
         name=args.run_name,
         entity=args.entity
-    )
+    )   
 
     # setup trainer
     trainer = pl.Trainer(
