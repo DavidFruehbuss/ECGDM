@@ -71,6 +71,10 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
+        # transform for ligand data
+        if self.dataset == 'ligand':
+            self.data_transform = None
+
     # Data section
 
     def setup(self, stage):
