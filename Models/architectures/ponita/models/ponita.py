@@ -1,14 +1,14 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn import global_add_pool
-from ponita.utils.to_from_sphere import sphere_to_scalar, sphere_to_vec
-from ponita.nn.embedding import PolynomialFeatures
-from ponita.utils.windowing import PolynomialCutoff
-from ponita.transforms import PositionOrientationGraph, SEnInvariantAttributes
+from Models.architectures.ponita.utils.to_from_sphere import sphere_to_scalar, sphere_to_vec
+from Models.architectures.ponita.nn.embedding import PolynomialFeatures
+from Models.architectures.ponita.utils.windowing import PolynomialCutoff
+from Models.architectures.ponita.transforms import PositionOrientationGraph, SEnInvariantAttributes
 from torch_geometric.transforms import Compose
 from torch_scatter import scatter_mean
-from ponita.nn.conv import Conv, FiberBundleConv
-from ponita.nn.convnext import ConvNext
+from Models.architectures.ponita.nn.conv import Conv, FiberBundleConv
+from Models.architectures.ponita.nn.convnext import ConvNext
 from torch_geometric.transforms import BaseTransform, Compose, RadiusGraph
 
 
