@@ -18,9 +18,9 @@ if __name__ == "__main__":
     args_dict = args.__dict__
     for key, value in config.items():
         if isinstance(value, dict):
-            args[key] = Namespace(**value)
+            args_dict[key] = Namespace(**value)
         else:
-            args[key] = value
+            args_dict[key] = value
 
     # lightning module
     model = Structure_Prediction_Model(
