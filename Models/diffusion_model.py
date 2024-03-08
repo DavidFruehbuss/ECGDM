@@ -137,8 +137,8 @@ class Conditional_Diffusion_Model(nn.Module):
         # for h we need standard normal noise
         eps_h_mol = torch.randn(size=(len(xh_mol), self.num_atoms), device=device)
         eps_h_pro = torch.randn(size=(len(xh_pro), self.num_residues), device=device)
-        epsilon_mol = torch.cat([eps_x[:len(xh_mol)], eps_h_mol], dim=1)
-        epsilon_pro = torch.cat([eps_x[len(xh_mol):], eps_h_pro], dim=1)
+        epsilon_mol = torch.cat((eps_x[:len(xh_mol)], eps_h_mol), dim=1)
+        epsilon_pro = torch.cat((eps_x[len(xh_mol):], eps_h_pro), dim=1)
 
         # compute noised representations
         z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
