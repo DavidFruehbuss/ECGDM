@@ -147,7 +147,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.log('train_loss', loss)
         return loss
 
-    def validation_step(self, data_batch):
+    def validation_step(self, data_batch, *args):
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
         loss = self.model(mol_pro_batch)
         self.log('val_loss', loss)
