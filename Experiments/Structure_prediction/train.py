@@ -13,7 +13,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     with open(args.config) as f:
-        config = yaml.save_load(f)
+        config = yaml.safe_load(f)
 
     args_dict = args.__dict__
     for key, value in config.items():
