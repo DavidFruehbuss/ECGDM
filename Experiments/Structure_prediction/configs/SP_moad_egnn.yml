@@ -1,5 +1,5 @@
 # Logging
-logdir: 'Experiments/Structure_prediction/Logs/MOAD_egnn_1'
+logdir: './Experiments/Structure_prediction/Logs/MOAD_egnn_1'
 project: Structur_prediction
 run_name: 'SP_MOAD_egnn_1'
 entity: 'neuro-ai-scientist'
@@ -15,7 +15,7 @@ num_workers: 1
 
 # Dataset
 dataset: 'MOAD'
-data_dir: 'Data/Ligand_data/MOAD/processed_noH_ca_only'
+data_dir: './Data/Ligand_data/MOAD/processed_noH_ca_only'
 dataset_params:
   num_atoms: 10 # obtained from constant file
   num_residues: 20
