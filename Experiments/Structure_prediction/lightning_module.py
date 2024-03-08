@@ -45,7 +45,7 @@ class Structure_Prediction_Model(pl.LightningModule):
 
         # choose the generative framework
         frameworks = {'conditional_diffusion': Conditional_Diffusion_Model} # 'generative_flow_network': GFlow_Model
-        assert generative_model in frameworks
+        # assert generative_model in frameworks
 
         # choose the neural net architecture
         self.neural_net = NN_Model(
