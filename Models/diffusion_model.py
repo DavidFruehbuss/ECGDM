@@ -119,7 +119,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # TODO: add normalisation (not sure why yet, so leave it for later)
 
         # sample t ~ U(0,...,T) for each graph individually
-        t = torch.randint(0, self.T + 1, size=batch_size, device=device) # is an int
+        t = torch.randint(0, self.T + 1, size=(batch_size), device=device) # is an int
         s = t - 1
 
         # noise schedule
