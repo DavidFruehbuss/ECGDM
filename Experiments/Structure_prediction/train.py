@@ -29,7 +29,7 @@ if __name__ == "__main__":
                 args.dataset_params,
                 args.generative_model,
                 args.generative_model_params,
-                args.neural_network,
+                args.architcture,
                 args.network_params,
                 args.batch_size,
                 args.lr,
