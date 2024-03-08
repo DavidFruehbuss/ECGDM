@@ -114,7 +114,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         molecule, protein_pocket = z_data
         batch_size = molecule['size'].size(0)
-        device = z_data.device
+        device = molecule.device
 
         # TODO: add normalisation (not sure why yet, so leave it for later)
 
