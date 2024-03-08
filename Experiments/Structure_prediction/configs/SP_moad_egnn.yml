@@ -6,7 +6,7 @@ entity: 'neuro-ai-scientist'
 
 # Training
 max_epochs: 1000
-device: 'gpu'
+device: 'cuda'
 gpus: 1
 
 batch_size: 16
