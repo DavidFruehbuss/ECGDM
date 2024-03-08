@@ -33,6 +33,7 @@ if __name__ == "__main__":
                 args.network_params,
                 args.batch_size,
                 args.lr,
+                args.num_workers,
                 args.device
     )
 
