@@ -9,8 +9,8 @@ max_epochs: 1000
 device: 'gpu'
 gpus: 1
 
-batch_size: 16,
-lr: 5.0e-4,
+batch_size: 16
+lr: 5.0e-4
 num_workers: 1
 
 # Dataset
@@ -24,7 +24,7 @@ generative_model: 'conditional_diffusion'
 generative_model_params:
   timesteps: 500
 
-architcture: 'egnn',
+architcture: 'egnn'
 network_params: 
   # general network parameters
   conditioned_on_time: True
