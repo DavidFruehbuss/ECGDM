@@ -23,6 +23,7 @@ class NN_Model(nn.Module):
             num_residues: int,
             device: str,
     ):
+        super().__init__()
         self.architecture = architecture
         self.x_dim = 3
         self.act_fn = nn.SiLU()
