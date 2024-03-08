@@ -8,7 +8,7 @@ from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Pr
 if __name__ == "__main__":
 
     # read in config
-    parser = add_argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
     args = parser.parse_args()
 
