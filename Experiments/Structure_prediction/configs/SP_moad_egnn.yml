@@ -5,7 +5,7 @@ run_name: 'SP_MOAD_egnn_1'
 entity: 'neuro-ai-scientist'
 
 # Training
-max_epochs: 1000
+num_epochs: 1000
 device: 'cuda'
 gpus: 1
 
