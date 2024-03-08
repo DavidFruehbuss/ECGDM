@@ -31,7 +31,7 @@ class NN_Model(nn.Module):
         """
 
         super().__init__()
-        
+
         self.architecture = architecture
         self.x_dim = 3
         self.act_fn = nn.SiLU()
@@ -43,7 +43,7 @@ class NN_Model(nn.Module):
         self.conditioned_on_time = network_params.conditioned_on_time
 
         if self.conditioned_on_time:
-            joint_dim += 1
+            self.joint_dim += 1
 
         # edge parameters
         self.edge_embedding_dim = network_params.edge_embedding_dim
@@ -55,19 +55,19 @@ class NN_Model(nn.Module):
 
         if architecture == 'ponita':
 
-            self.atom_encoder = nn.Linear(num_atoms, joint_dim)
+            self.atom_encoder = nn.Linear(num_atoms, self.joint_dim)
 
-            self.atom_decoder = nn.Linear(joint_dim, num_atoms)
+            self.atom_decoder = nn.Linear(self.joint_dim, num_atoms)
 
-            self.residue_encoder = nn.Linear(num_residues, joint_dim)
+            self.residue_encoder = nn.Linear(num_residues, self.joint_dim)
 
-            self.residue_decoder = nn.Linear(joint_dim, num_residues)
+            self.residue_decoder = nn.Linear(self.joint_dim, num_residues)
 
             # dimensions for ponita model
-            in_channels_scalar = joint_dim
+            in_channels_scalar = self.joint_dim
             in_channels_vec = 0
             # TODO: check how to properly use scalar vs vector outputs
-            out_channels_scalar = joint_dim # updated features
+            out_channels_scalar = self.joint_dim # updated features
             out_channels_vec = 1 # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
@@ -99,11 +99,11 @@ class NN_Model(nn.Module):
             self.atom_encoder = nn.Sequential(
                 nn.Linear(num_atoms, 2 * num_atoms),
                 self.act_fn,
-                nn.inear(2 * num_atoms, joint_dim)
+                nn.inear(2 * num_atoms, self.joint_dim)
             )
 
             self.atom_decoder = nn.Sequential(
-                nn.Linear(joint_dim, 2 * num_atoms),
+                nn.Linear(self.joint_dim, 2 * num_atoms),
                 self.act_fn,
                 nn.Linear(2 * num_atoms, num_atoms)
             )
@@ -111,18 +111,18 @@ class NN_Model(nn.Module):
             self.residue_encoder = nn.Sequential(
                 nn.Linear(num_residues, 2 * num_residues),
                 self.act_fn,
-                nn.Linear(2 * num_residues, joint_dim)
+                nn.Linear(2 * num_residues, self.joint_dim)
             )
 
             self.residue_decoder = nn.Sequential(
-                nn.Linear(joint_dim, 2 * num_residues),
+                nn.Linear(self.joint_dim, 2 * num_residues),
                 self.act_fn,
                 nn.Linear(2 * num_residues, num_residues)
             )
 
             if architecture == 'egnn':
 
-                self.egnn = EGNN(in_node_nf=joint_dim, in_edge_nf=self.edge_embedding_dim,
+                self.egnn = EGNN(in_node_nf=self.joint_dim, in_edge_nf=self.edge_embedding_dim,
                                  hidden_nf=self.hidden_dim, device=device, act_fn=self.act_fn,
                                  n_layers=self.num_layers, attention=network_params.attention, tanh=network_params.tanh,
                                  norm_constant=network_params.norm_constant,
@@ -133,8 +133,8 @@ class NN_Model(nn.Module):
 
             else:
                 
-                self.gnn = GNN(in_node_nf=joint_dim + self.x_dim, in_edge_nf=self.edge_embedding_dim,
-                               hidden_nf=self.hidden_dim, out_node_nf=self.x_dim + joint_dim,
+                self.gnn = GNN(in_node_nf=self.joint_dim + self.x_dim, in_edge_nf=self.edge_embedding_dim,
+                               hidden_nf=self.hidden_dim, out_node_nf=self.x_dim + self.joint_dim,
                                device=device, act_fn=self.act_fn, n_layers=self.num_layers,
                                attention=network_params.attention, normalization_factor=network_params.normalization_factor,
                                aggregation_method=network_params.aggregation_method)
