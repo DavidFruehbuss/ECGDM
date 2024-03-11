@@ -225,7 +225,7 @@ class NN_Model(nn.Module):
             # add time conditioning
             if self.conditioned_on_time:
                 h_time = t[idx_joint]
-                h = torch.cat([h, h_time], dim=1)
+                h_joint = torch.cat([h_joint, h_time], dim=1)
 
             # add edge embedding and types
             if self.edge_embedding_dim > 0:
