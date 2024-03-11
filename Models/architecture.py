@@ -42,9 +42,6 @@ class NN_Model(nn.Module):
         self.pocket_position_fixed = network_params.pocket_position_fixed
         self.conditioned_on_time = network_params.conditioned_on_time
 
-        if self.conditioned_on_time:
-            self.joint_dim += 1
-
         # edge parameters
         self.edge_embedding_dim = network_params.edge_embedding_dim
         self.edge_cutoff_l = network_params.edge_cutoff_ligand
@@ -62,6 +59,9 @@ class NN_Model(nn.Module):
             self.residue_encoder = nn.Linear(num_residues, self.joint_dim)
 
             self.residue_decoder = nn.Linear(self.joint_dim, num_residues)
+
+            if self.conditioned_on_time:
+                self.joint_dim += 1
 
             # dimensions for ponita model
             in_channels_scalar = self.joint_dim
@@ -119,6 +119,9 @@ class NN_Model(nn.Module):
                 self.act_fn,
                 nn.Linear(2 * num_residues, num_residues)
             )
+
+            if self.conditioned_on_time:
+                self.joint_dim += 1
 
             if architecture == 'egnn':
 
@@ -179,7 +182,7 @@ class NN_Model(nn.Module):
                 h_time_mol = t[molecule_idx]
                 h_time_pro = t[protein_pocket_idx]
                 h_mol = torch.cat([h_mol, h_time_mol], dim=1)
-                h_mol = torch.cat([h_pro, h_time_pro], dim=1)
+                h_pro = torch.cat([h_pro, h_time_pro], dim=1)
 
             # (3) need to save [x, h, edges] as [graph.pos, graph.x, graph.edge_index]
             # (might want to make a helper function for this, can use molecule['size'] object)
