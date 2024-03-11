@@ -119,7 +119,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # TODO: add normalisation (not sure why yet, so leave it for later)
 
         # sample t ~ U(0,...,T) for each graph individually
-        t = torch.randint(0, self.T + 1, size=(batch_size,), device=device) # (1, batch_size)
+        t = torch.randint(0, self.T + 1, size=(batch_size,1), device=device) # (1, batch_size)
         s = t - 1
 
         # noise schedule
@@ -144,9 +144,9 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute noised representations
         # alpha_t: [16] -> [16,13]
         # [300] * [300,13]
-        alpha_t = alpha_t.unsqueeze(1).expand(16, 13)
-        sigma_t = sigma_t.unsqueeze(1).expand(16, 13)
-        print(alpha_t)
+        # alpha_t = alpha_t.expand(16, 13)
+        # sigma_t = sigma_t.expand(16, 13)
+        # print(alpha_t)
         z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
         z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
 
