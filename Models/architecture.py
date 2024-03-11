@@ -178,7 +178,7 @@ class NN_Model(nn.Module):
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
 
             # (2) add time conditioning
-            if self.condition_time:
+            if self.conditioned_on_time:
                 h_time_mol = t[molecule_idx]
                 h_time_pro = t[protein_pocket_idx]
                 h_mol = torch.cat([h_mol, h_time_mol], dim=1)
@@ -271,7 +271,7 @@ class NN_Model(nn.Module):
             raise Exception(f"Wrong architecture {self.architecture}")
         
         # remove time dim
-        if self.condition_time:
+        if self.conditioned_on_time:
             # Slice off last dimension which represented time.
             h_new = h_new[:, :-1]
                 
