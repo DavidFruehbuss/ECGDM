@@ -160,7 +160,7 @@ class NN_Model(nn.Module):
                 epsilon_hat_pro [batch_node_dim_pro, x + num_residues]
         '''
 
-        idx_joint = torch.cat(molecule_idx, protein_pocket_idx, dim=0)
+        idx_joint = torch.cat((molecule_idx, protein_pocket_idx, dim=0))
         x_mol = z_t_mol[:,:self.x_dim]
         x_pro = z_t_pro[:,:self.x_dim]
 
@@ -189,8 +189,8 @@ class NN_Model(nn.Module):
             h_pro_split = torch.split(h_pro, counts_pro.tolist()) # list([graph_num_nodes, num_residues], len(batch_size))
             x_mol_split = torch.split(x_mol, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
             x_pro_split = torch.split(x_pro, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
-            h_split = [torch.cat(h_mol_split[i], h_pro_split[i], dim=0) for i in range(len(h_mol_split))]
-            x_split = [torch.cat(x_mol_split[i], x_pro_split[i], dim=0) for i in range(len(x_mol_split))]
+            h_split = [torch.cat((h_mol_split[i], h_pro_split[i]), dim=0) for i in range(len(h_mol_split))]
+            x_split = [torch.cat((x_mol_split[i], x_pro_split[i]), dim=0) for i in range(len(x_mol_split))]
 
             graphs = [Data(x=h_split[i], pos=x_split[i]) for i in range(len(h_mol_split))]
             batched_graph = Batch.from_data_list(graphs)
@@ -219,8 +219,8 @@ class NN_Model(nn.Module):
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
 
             # combine molecule and protein in joint space
-            x_joint = torch.cat(z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim], dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
-            h_joint = torch.cat(h_mol, h_pro, dim=0) # [batch_node_dim_mol + batch_node_dim_pro, joint_dim]
+            x_joint = torch.cat((z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim]), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
+            h_joint = torch.cat((h_mol, h_pro), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, joint_dim]
 
             # add time conditioning
             if self.conditioned_on_time:
@@ -284,8 +284,8 @@ class NN_Model(nn.Module):
         displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)
 
         # output
-        epsilon_hat_mol = torch.cat(displacement_vec[:len(molecule_idx)], h_new_mol, dim=1)
-        epsilon_hat_pro = torch.cat(displacement_vec[len(molecule_idx):], h_new_pro, dim=1)
+        epsilon_hat_mol = torch.cat((displacement_vec[:len(molecule_idx)], h_new_mol), dim=1)
+        epsilon_hat_pro = torch.cat((displacement_vec[len(molecule_idx):], h_new_pro), dim=1)
 
         return epsilon_hat_mol, epsilon_hat_pro
     
