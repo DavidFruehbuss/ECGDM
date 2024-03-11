@@ -160,7 +160,7 @@ class NN_Model(nn.Module):
                 epsilon_hat_pro [batch_node_dim_pro, x + num_residues]
         '''
 
-        idx_joint = torch.cat((molecule_idx, protein_pocket_idx, dim=0))
+        idx_joint = torch.cat((molecule_idx, protein_pocket_idx), dim=0)
         x_mol = z_t_mol[:,:self.x_dim]
         x_pro = z_t_pro[:,:self.x_dim]
 
