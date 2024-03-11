@@ -129,11 +129,12 @@ class Conditional_Diffusion_Model(nn.Module):
         # prepare joint point cloud
         xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
+        index = torch.cat((molecule['idx'], protein_pocket['idx']))
 
         # compute noised sample z_t
         # for x cord. we mean center the normal noise for each graph
         x_noise = torch.randn(size=(len(xh_mol) + len(xh_pro), self.x_dim), device=device)
-        eps_x = x_noise - scatter_mean(x_noise, torch.cat((molecule['idx'], protein_pocket['idx'])), dim=0)
+        eps_x = x_noise - scatter_mean(x_noise, index, dim=0)[index]
         # for h we need standard normal noise
         eps_h_mol = torch.randn(size=(len(xh_mol), self.num_atoms), device=device)
         eps_h_pro = torch.randn(size=(len(xh_pro), self.num_residues), device=device)
