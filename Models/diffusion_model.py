@@ -104,7 +104,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         loss_t = 0.5 * (error_mol + error_pro)
 
-        return loss_t
+        return loss_t.mean(0)
 
     def noise_process(self, z_data):
 
