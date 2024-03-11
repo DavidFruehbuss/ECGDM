@@ -142,6 +142,7 @@ class Conditional_Diffusion_Model(nn.Module):
         epsilon_pro = torch.cat((eps_x[len(xh_mol):], eps_h_pro), dim=1)
 
         # compute noised representations
+        print(alpha_t[molecule['idx']].shape, xh_mol.shape)
         z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
         z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
 
