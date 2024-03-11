@@ -284,7 +284,7 @@ class NN_Model(nn.Module):
             raise ValueError("NaN detected in EGNN output")
         
         # remove mean batch of the position (not sure why)
-        displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)
+        displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)[idx_joint]
 
         # output
         epsilon_hat_mol = torch.cat((displacement_vec[:len(molecule_idx)], h_new_mol), dim=1)
