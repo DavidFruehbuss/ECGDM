@@ -144,8 +144,8 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute noised representations
         # alpha_t: [16] -> [16,13]
         # [300] * [300,13]
-        alpha_t = alpha_t.repeat(1, 13).view(16, 13)
-        sigma_t = sigma_t.repeat(1, 13).view(16, 13)
+        alpha_t = alpha_t.unsqueeze(1).expand(16, 13)
+        sigma_t = sigma_t.unsqueeze(1).expand(16, 13)
         print(alpha_t)
         z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
         z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
