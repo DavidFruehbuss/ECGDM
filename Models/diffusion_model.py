@@ -94,6 +94,18 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute denoised sample
         # z_data_hat = (1 / alpha_t) * z_t - (sigma_t / alpha_t) * epsilon_hat
 
+        ## Loss computation part
+
+        # TODO: add loss_0 computation and normalisation
+        # TODO: add normalisation of the loss_t
+        # TODO: add KL_prior loss (neglebile)
+
+        # TODO: for vlb would have to add neg_log_const
+
+        # TODO: add different mode for evaluation
+
+        # TODO: can add auxiliary loss / lennard-jones potential
+
         # compute the sum squared error loss per graph
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
@@ -119,12 +131,15 @@ class Conditional_Diffusion_Model(nn.Module):
         # TODO: add normalisation (not sure why yet, so leave it for later)
 
         # sample t ~ U(0,...,T) for each graph individually
+        # TODO: add mask for t = 0 and t != 0
         t = torch.randint(0, self.T + 1, size=(batch_size,1), device=device) # (1, batch_size)
         s = t - 1
 
         # noise schedule
         alpha_t = 1 - (t / self.T)**2
         sigma_t = torch.sqrt(1 - alpha_t**2)
+
+        # TODO: center the input nodes
 
         # prepare joint point cloud
         xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)

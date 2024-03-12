@@ -143,11 +143,13 @@ class Structure_Prediction_Model(pl.LightningModule):
 
     def training_step(self, data_batch):
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
+        # TODO: could add augment_noise and augment_rotation but excluded in DiffDock
         loss = self.model(mol_pro_batch)
         self.log('train_loss', loss)
         return loss
 
     def validation_step(self, data_batch, *args):
+        # TODO: make sure eval adjustments are followed
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
         loss = self.model(mol_pro_batch)
         self.log('val_loss', loss)
