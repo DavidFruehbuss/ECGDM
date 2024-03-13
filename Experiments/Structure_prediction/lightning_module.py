@@ -54,6 +54,7 @@ class Structure_Prediction_Model(pl.LightningModule):
             network_params,
             dataset_params.num_atoms,
             dataset_params.num_residues,
+            dataset_params.norm_values,
             device,
         )
 
@@ -149,7 +150,6 @@ class Structure_Prediction_Model(pl.LightningModule):
         return loss
 
     def validation_step(self, data_batch, *args):
-        # TODO: make sure eval adjustments are followed
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
         loss = self.model(mol_pro_batch)
         self.log('val_loss', loss)
