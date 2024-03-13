@@ -54,7 +54,6 @@ class Structure_Prediction_Model(pl.LightningModule):
             network_params,
             dataset_params.num_atoms,
             dataset_params.num_residues,
-            dataset_params.norm_values,
             device,
         )
 
@@ -64,6 +63,7 @@ class Structure_Prediction_Model(pl.LightningModule):
             generative_model_params.timesteps,
             dataset_params.num_atoms,
             dataset_params.num_residues,
+            dataset_params.norm_values,
         )
         
         self.dataset = dataset
