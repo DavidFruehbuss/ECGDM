@@ -287,9 +287,10 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Compute integrals from 0.5 to 1.5 of the normal distribution
         # N(mean=z_h_cat, stdev=sigma_0_cat)
+        # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
         log_probabilities_mol_unnormalized = torch.log(
-            self.cdf_standard_gaussian((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['mask']])
-            - self.cdf_standard_gaussian((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['mask']])
+            0.5 * (1. + torch.erf((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['mask']]) / torch.sqrt(2))
+            - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['mask']]) / torch.sqrt(2))
             + epsilon
         )
 
