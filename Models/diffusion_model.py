@@ -291,8 +291,8 @@ class Conditional_Diffusion_Model(nn.Module):
         # N(mean=z_h_cat, stdev=sigma_0_cat)
         # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
         log_probabilities_mol_unnormalized = torch.log(
-            0.5 * (1. + torch.erf((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['idx']]) / torch.sqrt(torch.Tensor([2]), device=device)) \
-            - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / torch.sqrt(torch.Tensor([2]), device=device)) \
+            0.5 * (1. + torch.erf((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['idx']]) / torch.sqrt(torch.Tensor([2], device=device))) \
+            - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / torch.sqrt(torch.Tensor([2], device=device))) \
             + epsilon
         )
 
