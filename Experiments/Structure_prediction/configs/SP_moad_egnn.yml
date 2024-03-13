@@ -13,12 +13,17 @@ batch_size: 16
 lr: 5.0e-4
 num_workers: 1
 
+# Task
+# protein_pocket_fixed = True
+# featrues_fixed = False
+
 # Dataset
 dataset: 'ligand'
 data_dir: '/content/drive/MyDrive/processed_noH_ca_only' # './Data/Ligand_data/MOAD/processed_noH_ca_only'
 dataset_params:
   num_atoms: 10 # obtained from constant file
   num_residues: 20
+  norm_values: [1,4] # for moad [1,4]
 
 generative_model: 'conditional_diffusion'
 generative_model_params:
