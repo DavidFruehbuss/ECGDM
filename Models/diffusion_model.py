@@ -208,7 +208,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'error_pro': error_pro,
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
             'loss_x_protein_t0': loss_x_protein_t0,
-            'loss_h_t0': loss_h_t0,
+            'loss_h_t0': loss_h_t0.mean(0),
             'loss_0': loss_0.mean(0),
             'kl_prior': kl_prior,
             'neg_log_const': neg_log_const,
