@@ -145,14 +145,21 @@ class Structure_Prediction_Model(pl.LightningModule):
     def training_step(self, data_batch):
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
         # TODO: could add augment_noise and augment_rotation but excluded in DiffDock
-        loss = self.model(mol_pro_batch)
+        loss, info = self.model(mol_pro_batch)
         self.log('train_loss', loss)
+
+        for key, value in info.items():
+            self.log(key, value)
+
         return loss
 
     def validation_step(self, data_batch, *args):
         mol_pro_batch = self.get_molecule_and_protein(data_batch)
-        loss = self.model(mol_pro_batch)
+        loss, info = self.model(mol_pro_batch)
         self.log('val_loss', loss)
+
+        for key, value in info.items():
+            self.log(key, value)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.neural_net.parameters(), lr=self.lr, amsgrad=True, weight_decay=1e-12)
