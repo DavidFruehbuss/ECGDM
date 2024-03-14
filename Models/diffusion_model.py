@@ -322,6 +322,7 @@ class Conditional_Diffusion_Model(nn.Module):
             - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
             + epsilon
         )
+        print(log_probabilities_mol_unnormalized)
 
         # Normalize the distribution over the categories.
         log_Z = torch.logsumexp(log_probabilities_mol_unnormalized, dim=1,
