@@ -197,6 +197,9 @@ class Conditional_Diffusion_Model(nn.Module):
             # Two added loss terms for vlb
             loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
 
+        # protein_pocket_fixed (again for logging)
+        error_pro = 0
+
         info = {
             'loss_t': loss_t.mean(0),
             'loss_0': loss_0.mean(0),
