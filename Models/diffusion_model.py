@@ -199,6 +199,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # protein_pocket_fixed (again for logging)
         error_pro = 0
+        loss_x_protein_t0 = 0
 
         info = {
             'loss_t': loss_t.mean(0),
