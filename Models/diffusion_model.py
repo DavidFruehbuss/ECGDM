@@ -208,6 +208,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'error_pro': error_pro,
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
             'loss_x_protein_t0': loss_x_protein_t0,
+            'loss_h_t0': v,
             'loss_0': loss_0.mean(0),
             'kl_prior': kl_prior,
             'neg_log_const': neg_log_const,
@@ -292,8 +293,6 @@ class Conditional_Diffusion_Model(nn.Module):
         This function calculate log(p(xh|z_0))
         Replicated from [Schneuing et al. 2023]
         """
-
-        device = molecule['x'].device
 
         ## Normal computation of position error (so t = 0 special case only important for h?)
 
