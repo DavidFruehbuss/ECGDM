@@ -30,8 +30,9 @@ class Noise_Schedule(nn.Module):
 
     def forward(self, t, type):
 
+        t_unnormalized = torch.round(t * self.T).long()
+
         if type == 'alpha':
-            t_unnormalized = torch.round(t * self.T).long()
             return self.alpha[t_unnormalized]
         else:
             return self.sigma[t_unnormalized]
