@@ -5,6 +5,8 @@ import math
 import torch.nn as nn
 from torch_scatter import scatter_add, scatter_mean
 
+from Models.noise_schedule import Noise_Schedule
+
 """
 This file implements the generative framework [diffusion model] for the model
 
@@ -88,6 +90,9 @@ class Conditional_Diffusion_Model(nn.Module):
         self.num_residues = num_residues
         self.norm_values = norm_values
         self.x_dim = 3
+
+        # Noise Schedule
+        self.noise_schedule = Noise_Schedule(self.T)
 
         
     def forward(self, z_data):
@@ -253,8 +258,8 @@ class Conditional_Diffusion_Model(nn.Module):
         t = torch.zeros((batch_size, 1), device=device) if t_is_0 else t
             
         # noise schedule
-        alpha_t = 1 - (t / self.T)**2
-        sigma_t = torch.sqrt(1 - alpha_t**2)
+        alpha_t = self.noise_schedule(t, 'alpha')
+        sigma_t = self.noise_schedule(t, 'sigma')
 
 
         # prepare joint point cloud
@@ -307,8 +312,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # TODO: need to be careful that the shape is correct
         # TODO: need to check my custom sigma/alpha vs DiffDocks gamma
-        alpha_0 = 1 - (t / self.T)**2
-        sigma_0 = torch.sqrt(1 - alpha_0**2)
+        sigma_0 = self.noise_schedule(t, 'sigma')
         sigma_0_unnormalized = sigma_0 * self.norm_values[1]
         # unnormalize not necessary for molecule['h'] because molecule was only locally normalized (can change that if necessary later)
         mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
