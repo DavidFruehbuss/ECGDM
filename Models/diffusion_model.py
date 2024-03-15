@@ -98,6 +98,7 @@ class Conditional_Diffusion_Model(nn.Module):
     def forward(self, z_data):
 
         molecule, protein_pocket = z_data
+        batch_size = molecule['size'].size(0)
 
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
@@ -115,7 +116,7 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
         # additional evaluation (VLB) variables
-        neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], device=molecule['x'].device)
+        neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
         delta_log_px = self.delta_log_px(self, molecule['size'] + protein_pocket['size'])
         # SNR is computed between timestep s and t (with s = t-1)
         SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
@@ -299,10 +300,10 @@ class Conditional_Diffusion_Model(nn.Module):
 
         return log_pN
     
-    def neg_log_const(self, num_nodes, device):
+    def neg_log_const(self, num_nodes, batch_size, device):
 
-        t0 = torch.zeros((self.batch_size, 1), device=device)
-        log_sigma_0 = torch.log(self.noise_schedule(t0, 'sigma')).view(self.batch_size)
+        t0 = torch.zeros((batch_size, 1), device=device)
+        log_sigma_0 = torch.log(self.noise_schedule(t0, 'sigma')).view(batch_size)
 
         neg_log_const = - ((num_nodes - 1) * self.x_dim) * (- log_sigma_0 - 0.5 * np.log(2 * np.pi))
 
