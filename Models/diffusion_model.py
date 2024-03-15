@@ -314,6 +314,8 @@ class Conditional_Diffusion_Model(nn.Module):
         mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
         mol_h_hat_centered = mol_h_hat - 1
 
+        print(sigma_0_unnormalized)
+
         # Compute integrals from 0.5 to 1.5 of the normal distribution
         # N(mean=z_h_cat, stdev=sigma_0_cat)
         # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
