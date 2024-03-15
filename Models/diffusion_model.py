@@ -117,7 +117,6 @@ class Conditional_Diffusion_Model(nn.Module):
         # additional evaluation (VLB) variables
         neg_log_const = neg_log_const(molecule['size'] + protein_pocket['size'], device=molecule['x'].device)
         delta_log_px = self.delta_log_px(self, molecule['size'] + protein_pocket['size'])
-        log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
         # SNR is computed between timestep s and t (with s = t-1)
         SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
