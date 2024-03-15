@@ -18,7 +18,7 @@ class Noise_Schedule(nn.Module):
         alpha2 = (1 - (x/num_timesteps)**2)**2
 
         # for numerical stability and offset for avoiding problems with t = 0
-        alpha2 = self.clip_noise_schedule(alpha2, clip_value=0.001)
+        alpha2 = self.clip_noise_schedule(alpha2)
         alpha2 = (1 - 2 * offset) * alpha2 + offset
 
         alpha = np.sqrt(alpha2)
