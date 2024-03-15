@@ -9,7 +9,7 @@ class Noise_Schedule(nn.Module):
     '''
 
     def __init__(self, num_timesteps, offset=1.0e-5, noise_schedule='polynomial'):
-        super.__init__()
+        super().__init__()
 
         if noise_schedule != 'polynomial':
             raise NotImplementedError
