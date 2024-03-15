@@ -293,7 +293,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         return delta_log_px
     
-    def log_pN(self, ):
+    def log_pN(self, molecule_N, protein_pocket_N):
 
         # add log_pN computation using the dataset histogram
         log_pN = 0
