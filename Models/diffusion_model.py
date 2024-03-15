@@ -111,24 +111,22 @@ class Conditional_Diffusion_Model(nn.Module):
         ## Loss computation part (1) t != 0
 
         # compute the sum squared error loss per graph
-        # TODO: set error_pro to 0 as pocket is fixed
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
         # additional evaluation (VLB) variables
-        # TODO: add SNR weight computation
-        SNR_weight = - 1
-        # TODO: add delta_log_px (normalisation) and log_pN (t = 0)
-        delta_log_px = 0
-        log_pN = 0
+        neg_log_const = neg_log_const(molecule['size'] + protein_pocket['size'], device=molecule['x'].device)
+        delta_log_px = self.delta_log_px(self, molecule['size'] + protein_pocket['size'])
+        log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
+        # SNR is computed between timestep s and t (with s = t-1)
+        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
-        # TODO: add neg_log_const
-        neg_log_const = 0
+        # TODO: add log_pN computation using the dataset histogram
+        log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
 
         # TODO optional: can add auxiliary loss / lennard-jones potential
-
-        # TODO: check all the gamma_t, alpha_t, sigma_t buissness again
 
         ## Loss computation part (2) t = 0
 
@@ -288,6 +286,46 @@ class Conditional_Diffusion_Model(nn.Module):
         z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
 
         return z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t
+    
+    def delta_log_px(self, num_nodes):
+
+        delta_log_px = - (num_nodes - 1) * self.x_dim * np.log(self.norm_values[0])
+
+        return delta_log_px
+    
+    def log_pN(self, ):
+
+        # add log_pN computation using the dataset histogram
+        log_pN = 0
+
+        return log_pN
+    
+    def neg_log_const(self, num_nodes, device):
+
+        t0 = torch.zeros((self.batch_size, 1), device=device)
+        log_sigma_0 = torch.log(self.noise_schedule(t0, 'sigma')).view(self.batch_size)
+
+        neg_log_const = - ((num_nodes - 1) * self.x_dim) * (- log_sigma_0 - 0.5 * np.log(2 * np.pi))
+
+        return neg_log_const
+    
+    def SNR_s_t(self, t):
+
+        '''
+        computes the SNR between t and the previous timestep t-1
+        (why not t and 0?)
+        '''
+
+        s = torch.round(t * self.T).long() - 1
+
+        alpha2_t = self.noise_schedule(t, 'alpha')**2
+        alpha2_s = self.noise_schedule(s, 'alpha')**2
+        sigma2_t = self.noise_schedule(t, 'sigma')**2
+        sigma2_s = self.noise_schedule(s, 'sigma')**2
+
+        SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
+
+        return SNR_s_t
     
     def loss_t0(
             self, molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
