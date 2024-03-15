@@ -27,8 +27,8 @@ class Noise_Schedule(nn.Module):
         alpha = np.sqrt(alpha2)
         sigma = np.sqrt(1-alpha2)
         
-        self.alpha = nn.Parameters(torch.from_numpy(alpha).float(), requires_gradient=False)
-        self.sigma = nn.Parameters(torch.from_numpy(sigma).float(), requires_gradient=False)
+        self.alpha = nn.Parameter(torch.from_numpy(alpha).float(), requires_gradient=False)
+        self.sigma = nn.Parameter(torch.from_numpy(sigma).float(), requires_gradient=False)
 
     def forward(self, t, type):
 
