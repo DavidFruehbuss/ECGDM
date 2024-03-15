@@ -38,7 +38,7 @@ class Noise_Schedule(nn.Module):
         else:
             return self.sigma(t_unnormalized)
 
-    def clip_noise_schedule(alphas2, clip_value=0.001):
+    def clip_noise_schedule(self, alphas2, clip_value=0.001):
 
         """
         Function copied from [Schneuing et al. 2023]
