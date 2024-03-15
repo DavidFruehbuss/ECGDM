@@ -17,11 +17,12 @@ class Noise_Schedule(nn.Module):
         x = np.linspace(0, num_timesteps + 1, num_timesteps + 1)
         alpha2 = (1 - (x/num_timesteps)**2)**2
 
+        print(alpha2.shape)
+        print(np.ones(1).shape)
+
         # for numerical stability and offset for avoiding problems with t = 0
         alpha2 = self.clip_noise_schedule(alpha2)
         alpha2 = (1 - 2 * offset) * alpha2 + offset
-        print(alpha2.shape)
-        print(np.ones(1).shape)
 
         alpha = np.sqrt(alpha2)
         sigma = np.sqrt(1-alpha2)
