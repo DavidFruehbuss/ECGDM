@@ -32,9 +32,9 @@ class Noise_Schedule(nn.Module):
 
         if type == 'alpha':
             t_unnormalized = torch.round(t * self.T).long()
-            return self.alpha(t_unnormalized)
+            return self.alpha[t_unnormalized]
         else:
-            return self.sigma(t_unnormalized)
+            return self.sigma[t_unnormalized]
 
     def clip_noise_schedule(self, alphas2, clip_value=0.001):
 
