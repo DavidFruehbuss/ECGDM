@@ -354,9 +354,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # unnormalize not necessary for molecule['h'] because molecule was only locally normalized (can change that if necessary later)
         mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
         mol_h_hat_centered = mol_h_hat - 1
-
-        print(sigma_0_unnormalized)
-
+        
         # Compute integrals from 0.5 to 1.5 of the normal distribution
         # N(mean=z_h_cat, stdev=sigma_0_cat)
         # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
@@ -365,7 +363,6 @@ class Conditional_Diffusion_Model(nn.Module):
             - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
             + epsilon
         )
-        print(log_probabilities_mol_unnormalized)
 
         # Normalize the distribution over the categories.
         log_Z = torch.logsumexp(log_probabilities_mol_unnormalized, dim=1,
