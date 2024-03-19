@@ -319,11 +319,11 @@ class Conditional_Diffusion_Model(nn.Module):
 
         s = torch.round(t * self.T).long() - 1
         s = s.to(t.device)
-        print(t)
-        print(s)
 
         alpha2_t = self.noise_schedule(t, 'alpha')**2
+        print(alpha2_t)
         alpha2_s = self.noise_schedule(s, 'alpha')**2
+        print(alpha2_s)
         sigma2_t = self.noise_schedule(t, 'sigma')**2
         sigma2_s = self.noise_schedule(s, 'sigma')**2
 
