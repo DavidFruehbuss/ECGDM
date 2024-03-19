@@ -115,15 +115,13 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
         # additional evaluation (VLB) variables
-        # neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
-        # delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
+        neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
+        delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
         # SNR is computed between timestep s and t (with s = t-1)
-        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+        # SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
         # TODO: remove later -> For debugging
-        neg_log_const = 0
-        delta_log_px = 0
-        # SNR_weight = 0
+        SNR_weight = 0
 
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
