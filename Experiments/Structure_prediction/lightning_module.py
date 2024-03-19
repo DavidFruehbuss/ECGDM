@@ -158,8 +158,9 @@ class Structure_Prediction_Model(pl.LightningModule):
         loss, info = self.model(mol_pro_batch)
         self.log('val_loss', loss)
 
-        for key, value in info.items():
-            self.log(key, value)
+        # for key, value in info.items():
+        #     val_key = key + 'val'
+        #     self.log(val_key, value)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.neural_net.parameters(), lr=self.lr, amsgrad=True, weight_decay=1e-12)
