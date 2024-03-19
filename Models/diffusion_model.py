@@ -92,8 +92,7 @@ class Conditional_Diffusion_Model(nn.Module):
         self.x_dim = 3
 
         # Noise Schedule
-        self.noise_schedule = Noise_Schedule(self.T) # .to(self.neural_net.device)
-
+        self.noise_schedule = Noise_Schedule(self.T)
         
     def forward(self, z_data):
 
@@ -116,10 +115,15 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
         # additional evaluation (VLB) variables
-        neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
-        delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
-        # SNR is computed between timestep s and t (with s = t-1)
-        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+        # neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
+        # delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
+        # # SNR is computed between timestep s and t (with s = t-1)
+        # SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+
+        # TODO: remove later -> For debugging
+        neg_log_const = 0
+        delta_log_px = 0
+        SNR_weight = 0
 
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
@@ -258,9 +262,6 @@ class Conditional_Diffusion_Model(nn.Module):
         # noise schedule
         alpha_t = self.noise_schedule(t, 'alpha')
         sigma_t = self.noise_schedule(t, 'sigma')
-
-        print(sigma_t.device)
-
 
         # prepare joint point cloud
         xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
