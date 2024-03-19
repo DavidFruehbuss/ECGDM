@@ -118,10 +118,10 @@ class Conditional_Diffusion_Model(nn.Module):
         neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
         delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
         # SNR is computed between timestep s and t (with s = t-1)
-        # SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
         # TODO: remove later -> For debugging
-        SNR_weight = 0
+        # SNR_weight = 0
 
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
@@ -216,7 +216,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'loss_h_t0': loss_h_t0.mean(0),
             'loss_0': loss_0.mean(0),
             'kl_prior': kl_prior,
-            'neg_log_const': neg_log_const,
+            'neg_log_const': neg_log_const.mean(0),
             'delta_log_px': delta_log_px,
             'log_pN': log_pN,
             'SNR_weight': SNR_weight
@@ -318,6 +318,7 @@ class Conditional_Diffusion_Model(nn.Module):
         '''
 
         s = torch.round(t * self.T).long() - 1
+        s = s.to(t.device)
 
         alpha2_t = self.noise_schedule(t, 'alpha')**2
         alpha2_s = self.noise_schedule(s, 'alpha')**2
