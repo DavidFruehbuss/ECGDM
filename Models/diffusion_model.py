@@ -203,29 +203,30 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = 0
         loss_x_protein_t0 = 0
 
-        info = {
-            'loss_t': loss_t.mean(0),
-            'loss_0': loss_0.mean(0),
-            'error_mol': error_mol.mean(0),
-            'error_pro': error_pro,
-            'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-            'loss_x_protein_t0': loss_x_protein_t0,
-            'loss_h_t0': loss_h_t0.mean(0),
-            'loss_0': loss_0.mean(0),
-            'kl_prior': kl_prior,
-            'neg_log_const': neg_log_const.mean(0),
-            'delta_log_px': delta_log_px.mean(0),
-            'log_pN': log_pN,
-            'SNR_weight': SNR_weight.mean(0)
-        }
-
         # info = {
         #     'loss_t': loss_t.mean(0),
         #     'loss_0': loss_0.mean(0),
         #     'error_mol': error_mol.mean(0),
+        #     'error_pro': error_pro,
         #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+        #     'loss_x_protein_t0': loss_x_protein_t0,
+        #     'loss_h_t0': loss_h_t0.mean(0),
         #     'loss_0': loss_0.mean(0),
+        #     'kl_prior': kl_prior,
+        #     'neg_log_const': neg_log_const.mean(0),
+        #     'delta_log_px': delta_log_px.mean(0),
+        #     'log_pN': log_pN,
+        #     'SNR_weight': SNR_weight.mean(0)
         # }
+
+        info = {
+            'loss_t': loss_t.mean(0),
+            'loss_0': loss_0.mean(0),
+            'error_mol': error_mol.mean(0),
+            'loss_0': loss_0.mean(0),
+            'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+            'loss_h_t0': loss_h_t0.mean(0),
+        }
 
         return loss.mean(0), info
 
