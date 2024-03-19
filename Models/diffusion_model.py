@@ -177,13 +177,13 @@ class Conditional_Diffusion_Model(nn.Module):
         if self.training:
 
             # Normalize loss_t by graph size
-            error_mol = error_mol / ((molecule['x'].size(0) + self.num_atoms) * molecule['size'])
-            error_pro = error_pro / ((protein_pocket['x'].size(0) + self.num_residues * protein_pocket['size']))
+            error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+            error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
             loss_t = 0.5 * (error_mol + error_pro)
 
             # Normalize loss_0 by graph size
-            loss_x_mol_t0 = loss_x_mol_t0 / molecule['x'].size(0) * molecule['size']
-            loss_x_protein_t0 = loss_x_protein_t0 / protein_pocket['x'].size(0) * protein_pocket['size']
+            loss_x_mol_t0 = loss_x_mol_t0 / self.x_dim * molecule['size']
+            loss_x_protein_t0 = loss_x_protein_t0 / self.x_dim * protein_pocket['size']
             loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
 
             loss = loss_t + loss_0 + kl_prior
@@ -354,7 +354,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # unnormalize not necessary for molecule['h'] because molecule was only locally normalized (can change that if necessary later)
         mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
         mol_h_hat_centered = mol_h_hat - 1
-        
+
         # Compute integrals from 0.5 to 1.5 of the normal distribution
         # N(mean=z_h_cat, stdev=sigma_0_cat)
         # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
