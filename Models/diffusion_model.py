@@ -120,9 +120,6 @@ class Conditional_Diffusion_Model(nn.Module):
         # SNR is computed between timestep s and t (with s = t-1)
         SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
-        # TODO: remove later -> For debugging
-        # SNR_weight = 0
-
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
         # TODO: add log_pN computation using the dataset histogram
@@ -318,18 +315,14 @@ class Conditional_Diffusion_Model(nn.Module):
         '''
 
         s = torch.round(t * self.T).long() - 1
-        s = s.to(t.device)
+        s = s / self.T
 
         alpha2_t = self.noise_schedule(t, 'alpha')**2
-        print(alpha2_t)
         alpha2_s = self.noise_schedule(s, 'alpha')**2
-        print(alpha2_s)
         sigma2_t = self.noise_schedule(t, 'sigma')**2
         sigma2_s = self.noise_schedule(s, 'sigma')**2
 
         SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
-
-        print(SNR_s_t)
 
         return SNR_s_t
     
