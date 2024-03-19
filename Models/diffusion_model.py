@@ -92,7 +92,7 @@ class Conditional_Diffusion_Model(nn.Module):
         self.x_dim = 3
 
         # Noise Schedule
-        self.noise_schedule = Noise_Schedule(self.T).to(self.neural_net.device)
+        self.noise_schedule = Noise_Schedule(self.T) # .to(self.neural_net.device)
 
         
     def forward(self, z_data):
