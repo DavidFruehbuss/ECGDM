@@ -214,7 +214,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'loss_0': loss_0.mean(0),
             'kl_prior': kl_prior,
             'neg_log_const': neg_log_const.mean(0),
-            'delta_log_px': delta_log_px,
+            'delta_log_px': delta_log_px.mean(0),
             'log_pN': log_pN,
             'SNR_weight': SNR_weight
         }
