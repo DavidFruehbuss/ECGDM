@@ -216,7 +216,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'neg_log_const': neg_log_const.mean(0),
             'delta_log_px': delta_log_px.mean(0),
             'log_pN': log_pN,
-            'SNR_weight': SNR_weight
+            'SNR_weight': SNR_weight.mean(0)
         }
 
         # info = {
