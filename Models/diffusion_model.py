@@ -182,8 +182,8 @@ class Conditional_Diffusion_Model(nn.Module):
             loss_t = 0.5 * (error_mol + error_pro)
 
             # Normalize loss_0 by graph size
-            loss_x_mol_t0 = loss_x_mol_t0 / self.x_dim * molecule['size']
-            loss_x_protein_t0 = loss_x_protein_t0 / self.x_dim * protein_pocket['size']
+            loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
+            loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
             loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
 
             loss = loss_t + loss_0 + kl_prior
