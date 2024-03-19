@@ -327,6 +327,8 @@ class Conditional_Diffusion_Model(nn.Module):
 
         SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
 
+        print(SNR_s_t)
+
         return SNR_s_t
     
     def loss_t0(
