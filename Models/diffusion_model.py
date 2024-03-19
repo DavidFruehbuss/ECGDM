@@ -259,6 +259,8 @@ class Conditional_Diffusion_Model(nn.Module):
         alpha_t = self.noise_schedule(t, 'alpha')
         sigma_t = self.noise_schedule(t, 'sigma')
 
+        print(sigma_t.device)
+
 
         # prepare joint point cloud
         xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
