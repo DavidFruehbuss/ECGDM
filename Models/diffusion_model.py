@@ -387,3 +387,41 @@ class Conditional_Diffusion_Model(nn.Module):
             loss_h_t0 = scatter_add(torch.sum(log_probabilities_mol * molecule['h'], dim=-1), molecule['idx'], dim=0)
         
         return loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
+    
+    def sample_structure(
+            self,
+            num_samples,
+            molecule_batch,
+            protein_pocket_batch,
+        ):
+        '''
+        This function takes a molecule and a protein and return the most likely joint structure
+        '''
+
+        # replicate (molecule + protein_pocket) to have a batch of num_samples many replicates
+        # do this step with Dataset function in lightning_modules
+        xh_mol = torch.cat((molecule_batch['x'], molecule_batch['h']), dim=1)
+        xh_pro = torch.cat((protein_pocket_batch['x'], protein_pocket_batch['h']), dim=1)
+
+        # Record protein_pocket center of mass before
+        protein_pocket_com_before = scatter_mean(protein_pocket_batch['x'], protein_pocket_batch['idx'], dim=0)
+
+        ## Denoising Diffusion
+        xh_lig, xh_pocket, lig_mask, pocket_mask = self.ddpm.sample_given_pocket(pocket, num_nodes_lig, timesteps=timesteps)
+
+        # Presteps
+        
+
+        # Iterativly denoise stepwise for t = T,...,1
+
+        # sample final molecules with t = 0
+
+        # Correct for center of mass difference
+        pocket_com_after = scatter_mean(xh_pocket[:, :self.x_dims], pocket_mask, dim=0)
+
+        xh_pocket[:, :self.x_dims] += (protein_pocket_com_before - pocket_com_after)[pocket_mask]
+        xh_lig[:, :self.x_dims] += (protein_pocket_com_before - pocket_com_after)[lig_mask]
+
+        sampled_structures = (xh_pocket,xh_lig)
+
+        return sampled_structures

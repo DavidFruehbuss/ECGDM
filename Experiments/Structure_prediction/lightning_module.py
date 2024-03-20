@@ -86,18 +86,12 @@ class Structure_Prediction_Model(pl.LightningModule):
 
     def setup(self, stage):
         if self.dataset == 'pmhc':
-
-            dataset = Peptide_MHC_Dataset(self.data_dir)
-            # split into training, validation and test data
-            train_size = int(0.8 * len(dataset))
-            val_size = int(0.1 * len(dataset))
-            test_size = len(dataset) - train_size - val_size
-            train_set, val_set, test_set = random_split(dataset, [train_size, val_size, test_size])
+            
             if stage == 'fit':
-                self.train_dataset = train_set
-                self.val_dataset = val_set
+                self.train_dataset = Peptide_MHC_Dataset(self.data_dir, 'train')
+                self.val_dataset = Peptide_MHC_Dataset(self.data_dir, 'val')
             elif stage == 'test':
-                self.test_dataset = test_set
+                self.test_dataset = Peptide_MHC_Dataset(self.data_dir, 'test')
 
         elif self.dataset == 'ligand':
 
@@ -197,9 +191,9 @@ class Structure_Prediction_Model(pl.LightningModule):
         loss, info = self.model(mol_pro_batch)
         self.log('val_loss', loss)
 
-        # for key, value in info.items():
-        #     val_key = key + 'val'
-        #     self.log(val_key, value)
+        for key, value in info.items():
+            val_key = key + 'val'
+            self.log(val_key, value)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.neural_net.parameters(), lr=self.lr, amsgrad=True, weight_decay=1e-12)
