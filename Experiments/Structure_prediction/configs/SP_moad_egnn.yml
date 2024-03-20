@@ -14,8 +14,9 @@ lr: 5.0e-4
 num_workers: 1
 
 # Task
-# protein_pocket_fixed = True
-# featrues_fixed = False
+task_params:
+  features_fixed: False
+  # protein_pocket_fixed = True
 
 # Dataset
 dataset: 'ligand'

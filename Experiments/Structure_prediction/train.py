@@ -27,6 +27,7 @@ if __name__ == "__main__":
                 args.dataset,
                 args.data_dir,
                 args.dataset_params,
+                args.task_params,
                 args.generative_model,
                 args.generative_model_params,
                 args.architcture,
