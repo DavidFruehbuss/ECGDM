@@ -103,12 +103,12 @@ class Structure_Prediction_Model(pl.LightningModule):
 
             if stage == 'fit':
                 self.train_dataset = ProcessedLigandPocketDataset(
-                    Path(self.datadir, 'train.npz'), transform=self.data_transform)
+                    Path(self.data_dir, 'train.npz'), transform=self.data_transform)
                 self.val_dataset = ProcessedLigandPocketDataset(
-                    Path(self.datadir, 'val.npz'), transform=self.data_transform)
+                    Path(self.data_dir, 'val.npz'), transform=self.data_transform)
             elif stage == 'test':
                 self.test_dataset = ProcessedLigandPocketDataset(
-                    Path(self.datadir, 'test.npz'), transform=self.data_transform)
+                    Path(self.data_dir, 'test.npz'), transform=self.data_transform)
             else:
                 raise NotImplementedError
             
