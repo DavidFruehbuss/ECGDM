@@ -69,6 +69,7 @@ class Conditional_Diffusion_Model(nn.Module):
     def __init__(
         self,
         neural_net: nn.Module,
+        features_fixed: bool,
         timesteps: int,
         num_atoms: int,
         num_residues: int,
@@ -84,6 +85,7 @@ class Conditional_Diffusion_Model(nn.Module):
         
         self.neural_net = neural_net
         self.T = timesteps
+        self.features_fixed = features_fixed
 
         # dataset info
         self.num_atoms = num_atoms
@@ -271,10 +273,17 @@ class Conditional_Diffusion_Model(nn.Module):
         # for x cord. we mean center the normal noise for each graph
         x_noise = torch.randn(size=(len(xh_mol) + len(xh_pro), self.x_dim), device=device)
         eps_x = x_noise - scatter_mean(x_noise, idx_joint, dim=0)[idx_joint]
-        # for h we need standard normal noise
-        # TODO: add option to turn this off for peptides
-        eps_h_mol = torch.randn(size=(len(xh_mol), self.num_atoms), device=device)
-        eps_h_pro = torch.randn(size=(len(xh_pro), self.num_residues), device=device)
+
+        if self.features_fixed:
+
+            eps_h_mol = torch.zeros(size=(len(xh_mol), self.num_atoms), device=device)
+            eps_h_pro = torch.zeros(size=(len(xh_pro), self.num_residues), device=device)
+
+        else:
+            # for h we need standard normal noise
+            eps_h_mol = torch.randn(size=(len(xh_mol), self.num_atoms), device=device)
+            eps_h_pro = torch.randn(size=(len(xh_pro), self.num_residues), device=device)
+
         epsilon_mol = torch.cat((eps_x[:len(xh_mol)], eps_h_mol), dim=1)
         epsilon_pro = torch.cat((eps_x[len(xh_mol):], eps_h_pro), dim=1)
 
@@ -345,31 +354,36 @@ class Conditional_Diffusion_Model(nn.Module):
         # TODO: if protein pocket not fixed add loss_x_protein_t0 computation
         loss_x_protein_t0 = 0
 
-        ## Computation for changed features (so t = 0 special case only important for h?)
+        if self.features_fixed:
 
-        # TODO: need to be careful that the shape is correct
-        # TODO: need to check my custom sigma/alpha vs DiffDocks gamma
-        sigma_0 = self.noise_schedule(t, 'sigma')
-        sigma_0_unnormalized = sigma_0 * self.norm_values[1]
-        # unnormalize not necessary for molecule['h'] because molecule was only locally normalized (can change that if necessary later)
-        mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
-        mol_h_hat_centered = mol_h_hat - 1
+            loss_h_t0 = 0
 
-        # Compute integrals from 0.5 to 1.5 of the normal distribution
-        # N(mean=z_h_cat, stdev=sigma_0_cat)
-        # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
-        log_probabilities_mol_unnormalized = torch.log(
-            0.5 * (1. + torch.erf((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
-            - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
-            + epsilon
-        )
+        else:
 
-        # Normalize the distribution over the categories.
-        log_Z = torch.logsumexp(log_probabilities_mol_unnormalized, dim=1,
-                                keepdim=True)
-        
-        log_probabilities_mol = log_probabilities_mol_unnormalized - log_Z
+            ## Computation for changed features (so t = 0 special case only important for h?)
 
-        loss_h_t0 = scatter_add(torch.sum(log_probabilities_mol * molecule['h'], dim=-1), molecule['idx'], dim=0)
+            # TODO: value here is about 100 times to big
+            sigma_0 = self.noise_schedule(t, 'sigma')
+            sigma_0_unnormalized = sigma_0 * self.norm_values[1]
+            # unnormalize not necessary for molecule['h'] because molecule was only locally normalized (can change that if necessary later)
+            mol_h_hat = z_t_mol[:, self.x_dim:] * self.norm_values[1]
+            mol_h_hat_centered = mol_h_hat - 1
+
+            # Compute integrals from 0.5 to 1.5 of the normal distribution
+            # N(mean=z_h_cat, stdev=sigma_0_cat)
+            # 0.5 * (1. + torch.erf(x / math.sqrt(2)))
+            log_probabilities_mol_unnormalized = torch.log(
+                0.5 * (1. + torch.erf((mol_h_hat_centered + 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
+                - 0.5 * (1. + torch.erf((mol_h_hat_centered - 0.5) / sigma_0_unnormalized[molecule['idx']]) / math.sqrt(2)) \
+                + epsilon
+            )
+
+            # Normalize the distribution over the categories.
+            log_Z = torch.logsumexp(log_probabilities_mol_unnormalized, dim=1,
+                                    keepdim=True)
+            
+            log_probabilities_mol = log_probabilities_mol_unnormalized - log_Z
+
+            loss_h_t0 = scatter_add(torch.sum(log_probabilities_mol * molecule['h'], dim=-1), molecule['idx'], dim=0)
         
         return loss_x_mol_t0, loss_x_protein_t0, loss_h_t0

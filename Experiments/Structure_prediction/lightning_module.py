@@ -26,6 +26,7 @@ class Structure_Prediction_Model(pl.LightningModule):
             dataset: str,
             data_dir: str,
             dataset_params: dict,
+            task_params: dict,
             generative_model: str,
             generative_model_params: dict,
             architecture: str,
@@ -64,6 +65,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.model = frameworks[generative_model](
             # framework parameters
             self.neural_net,
+            task_params.features_fixed,
             generative_model_params.timesteps,
             dataset_params.num_atoms,
             dataset_params.num_residues,
@@ -98,7 +100,7 @@ class Structure_Prediction_Model(pl.LightningModule):
                 self.test_dataset = test_set
 
         elif self.dataset == 'ligand':
-            
+
             if stage == 'fit':
                 self.train_dataset = ProcessedLigandPocketDataset(
                     Path(self.datadir, 'train.npz'), transform=self.data_transform)
