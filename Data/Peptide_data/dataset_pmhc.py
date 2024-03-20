@@ -35,6 +35,8 @@ class Peptide_MHC_Dataset(Dataset):
         for filename in os.listdir(datadir):
                 
             # need if statment to only select h5py files
+            if not filename.endswith('.hdf5'):
+                continue
             
             file_path = os.path.join(datadir, filename)
 
