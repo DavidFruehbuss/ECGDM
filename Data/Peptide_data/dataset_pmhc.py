@@ -27,7 +27,7 @@ class Peptide_MHC_Dataset(Dataset):
             'protein_pocket_positions': [],
             'protein_pocket_features': [],
             'num_protein_pocket_residues': [],
-            'protein_pocket': [],
+            'protein_pocket_idx': [],
             'edge_idx': [],
             'edge_type': [],
         }
@@ -42,27 +42,29 @@ class Peptide_MHC_Dataset(Dataset):
 
             data_subset = h5py.File(file_path, 'r')
 
-            for graph_name, graph in data_subset.itmes():
+            for graph_name, graph in data_subset.items():
 
                 # get node ids for peptide (0) and protein (1)
-                chain_ids = graph[graph_name]['node_features']['_chain_id']
+                chain_ids = graph['node_features']['_chain_id']
                 chain_ids_protein_pocket = [1 if id == b'M' else 0 for id in chain_ids]
                 chain_ids_peptide = [0 if id == b'M' else 1 for id in chain_ids]
 
-                position = graph[graph_name]['node_features']['_position']
+                position = graph['node_features']['_position']
+                position = torch.tensor(position)
                 position_peptide = position[chain_ids_peptide]
                 position_protein_pocket = position[chain_ids_protein_pocket]
 
-                features = graph[graph_name]['node_features']['res_type']
+                features = graph['node_features']['res_type']
+                features = torch.tensor(features)
                 features_peptide = features[chain_ids_peptide]
                 features_protein_pocket = features[chain_ids_protein_pocket]
 
                 feature_length = len(features_peptide[0]) # always 20 because we only have residues
 
                 # TODO: we should use these edges
-                edge_idx = graph[graph_name]['edge_features']['_index']
+                edge_idx = graph['edge_features']['_index']
                 # whether edge is a covalent bound or not
-                edge_type = graph[graph_name]['edge_features']['covalent']
+                edge_type = graph['edge_features']['covalent']
 
                 self.data['graph_name'].append([graph_name])
 
