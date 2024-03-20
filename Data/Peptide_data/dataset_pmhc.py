@@ -11,10 +11,8 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-with h5py.File('/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/residue-4162789.hdf5', 'r') as f5: print(f5.keys())
-
-
-datadir = '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
+# with h5py.File('/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/residue-4162789.hdf5', 'r') as f5: print(f5.keys())
+# datadir = '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
 
 class Peptide_MHC_Dataset(Dataset):
      
