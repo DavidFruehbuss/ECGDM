@@ -267,8 +267,8 @@ class Conditional_Diffusion_Model(nn.Module):
         idx_joint = torch.cat((molecule['idx'], protein_pocket['idx']))
 
         # center the input nodes (projection to 0 COM)
-        xh_mol = xh_mol - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-        xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # compute noised sample z_t
         # for x cord. we mean center the normal noise for each graph
