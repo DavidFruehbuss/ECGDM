@@ -1,5 +1,6 @@
 import argparse
 from argparse import Namespace
+from pathlib import Path
 import yaml
 
 import pytorch_lightning as pl
@@ -44,12 +45,22 @@ if __name__ == "__main__":
         project=args.project,
         name=args.run_name,
         entity=args.entity
-    )   
+    )
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        dirpath=Path(args.logdir, 'checkpoints'),
+        filename="best-model-epoch={epoch:02d}",
+        monitor="loss_t",
+        save_top_k=1,
+        save_last=True,
+        mode="min",
+    )
 
     # setup trainer
     trainer = pl.Trainer(
         max_epochs=args.num_epochs,
         logger=logger,
+        callbacks=[checkpoint_callback],
         enable_progress_bar=True,
         accelerator='gpu', devices=args.gpus,
     )

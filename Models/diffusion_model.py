@@ -266,6 +266,9 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
         idx_joint = torch.cat((molecule['idx'], protein_pocket['idx']))
 
+        # Debugging
+        print(xh_mol.shape, xh_pro.shape, molecule['idx'].shape, protein_pocket['idx'].shape, molecule['idx'], protein_pocket['idx'])
+
         # center the input nodes (projection to 0 COM)
         xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
         xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
