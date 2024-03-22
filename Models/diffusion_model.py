@@ -476,7 +476,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # compute p(x|z_0) using epsilon and alpha_0, sigma_0 to predict mean and std of x
         mean_mol_final = 1. / alpha_0[molecule['idx']] * (xh_mol - sigma_0[molecule['idx']] * epsilon_hat_mol_0)
-        sigma_mol_final = # not sure about this one
+        sigma_mol_final = sigma_0 / alpha_0 # not sure about this one
         eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
         xh_mol_final = mean_mol_final + sigma_mol_final * eps_lig_random
         xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
