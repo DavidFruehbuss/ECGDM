@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, random_split
 
 class Peptide_MHC_Dataset(Dataset):
      
-    def __init__(self, datadir, split='train', center=True, pickle_file=True):
+    def __init__(self, datadir, split='train', center=True, pickle_file=False):
 
         datadir_pickle = './Data/Peptide_data/pmhc_100K/'
 
