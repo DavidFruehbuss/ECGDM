@@ -3,6 +3,7 @@ import numpy as np
 import math
 
 import torch.nn as nn
+import torch.nn.functional as F
 from torch_scatter import scatter_add, scatter_mean
 
 from Models.noise_schedule import Noise_Schedule
@@ -265,14 +266,17 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
         idx_joint = torch.cat((molecule['idx'], protein_pocket['idx']))
 
-        # center the input nodes
-        xh_mol = xh_mol - scatter_mean(xh_mol, molecule['idx'], dim=0)[molecule['idx']]
-        xh_pro = xh_pro - scatter_mean(xh_pro, protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        # center the input nodes (projection to 0 COM)
+        xh_mol = xh_mol - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # compute noised sample z_t
         # for x cord. we mean center the normal noise for each graph
-        x_noise = torch.randn(size=(len(xh_mol) + len(xh_pro), self.x_dim), device=device)
-        eps_x = x_noise - scatter_mean(x_noise, idx_joint, dim=0)[idx_joint]
+        # modify to only diffuse position of the molecule
+        x_mol_noise = torch.randn(size=len(xh_mol, self.x_dim), device=device)
+        eps_x_mol = x_mol_noise - scatter_mean(x_mol_noise, molecule['idx'], dim=0)[molecule['idx']]
+        eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
+
 
         if self.features_fixed:
 
@@ -284,8 +288,8 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_h_mol = torch.randn(size=(len(xh_mol), self.num_atoms), device=device)
             eps_h_pro = torch.randn(size=(len(xh_pro), self.num_residues), device=device)
 
-        epsilon_mol = torch.cat((eps_x[:len(xh_mol)], eps_h_mol), dim=1)
-        epsilon_pro = torch.cat((eps_x[len(xh_mol):], eps_h_pro), dim=1)
+        epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
+        epsilon_pro = torch.cat((eps_x_pro, eps_h_pro), dim=1)
 
         # compute noised representations
         # alpha_t: [16,1] -> [300,13] or [333,23] by indexing and broadcasting
@@ -388,40 +392,118 @@ class Conditional_Diffusion_Model(nn.Module):
         
         return loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
     
+    @torch.no_grad()
     def sample_structure(
             self,
             num_samples,
-            molecule_batch,
-            protein_pocket_batch,
+            molecule,
+            protein_pocket,
         ):
         '''
-        This function takes a molecule and a protein and return the most likely joint structure
+        This function takes a molecule and a protein and return the most likely joint structure.
+        Instead of giving a batch of molecule-protein pairs, we give a batch of identical replicates
+        of the same pair, with the batch_size being the number of samples we want to generate.
+        Option A: assumes that we have a peptide and protein given and only diffuse structure.
         '''
 
         # replicate (molecule + protein_pocket) to have a batch of num_samples many replicates
         # do this step with Dataset function in lightning_modules
-        xh_mol = torch.cat((molecule_batch['x'], molecule_batch['h']), dim=1)
-        xh_pro = torch.cat((protein_pocket_batch['x'], protein_pocket_batch['h']), dim=1)
+        device = molecule['x'].device
+        num_samples = molecule['size']
 
         # Record protein_pocket center of mass before
-        protein_pocket_com_before = scatter_mean(protein_pocket_batch['x'], protein_pocket_batch['idx'], dim=0)
-
-        ## Denoising Diffusion
-        xh_lig, xh_pocket, lig_mask, pocket_mask = self.ddpm.sample_given_pocket(pocket, num_nodes_lig, timesteps=timesteps)
+        protein_pocket_com_before = scatter_mean(protein_pocket['x'], protein_pocket['idx'], dim=0)
 
         # Presteps
-        
+
+        # If we want a new peptide we would have to add random sampling of the start peptide here
+
+        # Normalisation
+        molecule['x'] = molecule['x'] / self.norm_values[0]
+        molecule['h'] = molecule['h'] / self.norm_values[1]
+        protein_pocket['x'] = protein_pocket['x'] / self.norm_values[0]
+        protein_pocket['h'] = protein_pocket['h'] / self.norm_values[1]
+
+        # combine position and features
+        xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
+        xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
+
+        # project both pocket and peptide to 0 COM
+        xh_mol = xh_mol - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # Iterativly denoise stepwise for t = T,...,1
+        # could add some noise to the input peptide (similar to sampling of new peptide)
+        for s in reversed(range(0,self.T)):
 
-        # sample final molecules with t = 0
+            # time arrays
+            s_array = torch.fill((num_samples, 1), fill_value=s, device=device)
+            t_array = s_array + 1
+            s_array_norm = s_array / self.T
+            t_array_norm = t_array / self.T
+
+            # compute alpha_s, alpha_t, sigma_s, sigma_t, alpha_t_given_s, sigma_t_given_s & sigma2_t_given_s
+            # alpha_t_given_s = alpha_t / alpha_s, sigma_t_given_s = sqrt(1 - (alpha_t_given_s) ^2 )
+            alpha_s = self.noise_schedule(s_array_norm, 'alpha')
+            alpha_t = self.noise_schedule(t_array_norm, 'alpha')
+            sigma_s = self.noise_schedule(s_array_norm, 'sigma')
+            sigma_t = self.noise_schedule(t_array_norm, 'sigma')
+            alpha_t_given_s = alpha_t / alpha_s
+            sigma_t_given_s = torch.sqrt(1 - (alpha_t_given_s)**2 )
+            sigma2_t_given_s = sigma_t_given_s**2
+
+            # use neural network to predict noise
+            epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'])
+
+            # compute p(z_s|z_t) using epsilon and alpha_s_given_t, sigma_s_given_t to predict mean and std of z_s
+            mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
+            sigma_mol_s = sigma_t_given_s * sigma_s / sigma_t
+            eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+            xh_mol_s = mean_mol_s + sigma_mol_s * eps_lig_random
+            xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
+
+            # project both pocket and peptide to 0 COM again
+            xh_mol = xh_mol_s - scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+            xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+
+        # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
+        t_0_array_norm = torch.zeros((num_samples, 1), device=device)
+        alpha_0 = self.noise_schedule(t_0_array_norm, 'alpha')
+        sigma_0 = self.noise_schedule(t_0_array_norm, 'sigma')
+
+        # use neural network to predict noise
+        epsilon_hat_mol_0, _ = self.neural_net(xh_mol, xh_pro, t_0_array_norm, molecule['idx'], protein_pocket['idx'])
+
+        # compute p(x|z_0) using epsilon and alpha_0, sigma_0 to predict mean and std of x
+        mean_mol_final = 1. / alpha_0[molecule['idx']] * (xh_mol - sigma_0[molecule['idx']] * epsilon_hat_mol_0)
+        sigma_mol_final = # not sure about this one
+        eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+        xh_mol_final = mean_mol_final + sigma_mol_final * eps_lig_random
+        xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
+
+        # project both pocket and peptide to 0 COM again
+        xh_mol_final = xh_mol_final - scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro_final = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+
+        # Unnormalisation
+        x_mol_final = xh_mol_final[:,:self.x_dim] * self.norm_values[0]
+        h_mol_final = xh_mol_final[:,self.x_dim:] * self.norm_values[0]
+        x_pro_final = xh_pro_final[:,:self.x_dim] * self.norm_values[0]
+        h_pro_final = xh_pro_final[:,self.x_dim:] * self.norm_values[0]
+
+        # Round h to one_hot encoding
+        h_mol_final = F.one_hot(torch.argmax(h_mol_final, dim=1), self.num_atoms)
+
+        # Recombine x and h
+        xh_mol_final = torch.cat([x_mol_final, h_mol_final], dim=1)
+        xh_pro_final = torch.cat([x_pro_final, h_pro_final], dim=1)
 
         # Correct for center of mass difference
-        pocket_com_after = scatter_mean(xh_pocket[:, :self.x_dims], pocket_mask, dim=0)
+        protein_pocket_com_after = scatter_mean(x_pro_final, protein_pocket['idx'], dim=0)
 
-        xh_pocket[:, :self.x_dims] += (protein_pocket_com_before - pocket_com_after)[pocket_mask]
-        xh_lig[:, :self.x_dims] += (protein_pocket_com_before - pocket_com_after)[lig_mask]
+        xh_mol_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
+        xh_pro_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[protein_pocket['idx']]
 
-        sampled_structures = (xh_pocket,xh_lig)
+        sampled_structures = (xh_mol_final, xh_pro_final)
 
         return sampled_structures

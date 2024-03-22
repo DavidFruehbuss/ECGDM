@@ -86,7 +86,7 @@ class Structure_Prediction_Model(pl.LightningModule):
 
     def setup(self, stage):
         if self.dataset == 'pmhc':
-            
+
             if stage == 'fit':
                 self.train_dataset = Peptide_MHC_Dataset(self.data_dir, 'train')
                 self.val_dataset = Peptide_MHC_Dataset(self.data_dir, 'val')
@@ -151,6 +151,7 @@ class Structure_Prediction_Model(pl.LightningModule):
                 'size': data['num_protein_pocket_residues'].to(self.device, INT_TYPE),
                 'idx': data['protein_pocket_idx'].to(self.device, INT_TYPE)
             }
+            return (molecule, protein_pocket)
 
         elif self.dataset == 'ligand':
         
