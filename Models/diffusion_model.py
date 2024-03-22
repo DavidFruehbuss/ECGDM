@@ -273,7 +273,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute noised sample z_t
         # for x cord. we mean center the normal noise for each graph
         # modify to only diffuse position of the molecule
-        x_mol_noise = torch.randn(size=len(xh_mol, self.x_dim), device=device)
+        x_mol_noise = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
         eps_x_mol = x_mol_noise - scatter_mean(x_mol_noise, molecule['idx'], dim=0)[molecule['idx']]
         eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
