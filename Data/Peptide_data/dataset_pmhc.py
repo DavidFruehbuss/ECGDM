@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, random_split
 
 class Peptide_MHC_Dataset(Dataset):
      
-    def __init__(self, datadir, split='train', center=True, pickle_file=False):
+    def __init__(self, datadir, split='train', center=True, pickle_file=True):
 
         datadir_pickle = './Data/Peptide_data/pmhc_100K/'
 
@@ -57,18 +57,18 @@ class Peptide_MHC_Dataset(Dataset):
 
                     # get node ids for peptide (0) and protein (1)
                     chain_ids = graph['node_features']['_chain_id']
-                    is_protein_pocket = chain_ids == b'M'
-                    is_peptide = ~is_protein_pocket
+                    chain_ids_protein_pocket = torch.tensor([1 if id == b'M' else 0 for id in chain_ids], dtype=torch.bool)
+                    chain_ids_peptide = torch.tensor([0 if id == b'M' else 1 for id in chain_ids], dtype=torch.bool)
 
                     position = graph['node_features']['_position']
                     position = torch.tensor(position)
-                    position_peptide = position[is_peptide]
-                    position_protein_pocket = position[is_protein_pocket]
+                    position_peptide = position[chain_ids_peptide]
+                    position_protein_pocket = position[chain_ids_protein_pocket]
 
                     features = graph['node_features']['res_type']
                     features = torch.tensor(features)
-                    features_peptide = features[is_peptide]
-                    features_protein_pocket = features[is_protein_pocket]
+                    features_peptide = features[chain_ids_peptide]
+                    features_protein_pocket = features[chain_ids_protein_pocket]
 
                     feature_length = len(features_peptide[0]) # always 20 because we only have residues
 
