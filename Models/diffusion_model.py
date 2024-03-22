@@ -429,8 +429,8 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
         # project both pocket and peptide to 0 COM
-        xh_mol = xh_mol - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-        xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # Iterativly denoise stepwise for t = T,...,1
         # could add some noise to the input peptide (similar to sampling of new peptide)
@@ -463,8 +463,8 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
             # project both pocket and peptide to 0 COM again
-            xh_mol = xh_mol_s - scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-            xh_pro = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            xh_mol[:,:self.x_dim] = xh_mol_s[:,:self.x_dim] - scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
         t_0_array_norm = torch.zeros((num_samples, 1), device=device)
@@ -482,8 +482,8 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
         # project both pocket and peptide to 0 COM again
-        xh_mol_final = xh_mol_final - scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-        xh_pro_final = xh_pro - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        xh_mol_final[:,:self.x_dim] = xh_mol_final[:,:self.x_dim] - scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_pro_final[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # Unnormalisation
         x_mol_final = xh_mol_final[:,:self.x_dim] * self.norm_values[0]
