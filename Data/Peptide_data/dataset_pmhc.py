@@ -127,6 +127,7 @@ class Peptide_MHC_Dataset(Dataset):
 
         return data
     
+    @staticmethod
     def collate_fn(batch):
         
         data_batch = {}
