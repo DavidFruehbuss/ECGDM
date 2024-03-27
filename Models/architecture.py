@@ -64,11 +64,11 @@ class NN_Model(nn.Module):
                 self.joint_dim += 1
 
             # dimensions for ponita model
-            in_channels_scalar = self.joint_dim
-            in_channels_vec = 0
+            in_channels_scalar = None
+            in_channels_vec = self.joint_dim
             # TODO: check how to properly use scalar vs vector outputs
-            out_channels_scalar = self.joint_dim # updated features
-            out_channels_vec = 1 # displacment vector
+            out_channels_scalar = None # updated features
+            out_channels_vec = self.joint_dim # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
                             self.hidden_dim,
@@ -81,7 +81,7 @@ class NN_Model(nn.Module):
                             degree=network_params.degree,
                             widening_factor=network_params.widening_factor,
                             layer_scale=network_params.layer_scale,
-                            task_level='graph',
+                            task_level='node',
                             multiple_readouts=network_params.multiple_readouts,
                             lift_graph=True)
             
@@ -203,7 +203,7 @@ class NN_Model(nn.Module):
 
             # (4) TODO: choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
             if self.pocket_position_fixed:
-                raise NotImplementedError
+                # raise NotImplementedError
                 pocket_position_fixed = torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
             else:
                 pocket_position_fixed = None
