@@ -46,7 +46,7 @@ network_params:
   # ponita specific
   radius: None
   num_ori: 12
-  basis_dim: None
+  basis_dim: 192
   degree: 3
   widening_factor: 4
   layer_scale: None
