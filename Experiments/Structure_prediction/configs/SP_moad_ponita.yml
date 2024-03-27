@@ -1,7 +1,7 @@
 # Logging
-logdir: './Experiments/Structure_prediction/Logs/MOAD_ponita_1/'
+logdir: './Experiments/Structure_prediction/Logs/moad_ponita_1/'
 project: 'Structur_prediction'
-run_name: 'SP_MOAD_ponita_1'
+run_name: 'SP_moad_ponita_1'
 entity: 'neuro-ai-scientist'
 
 # Training
