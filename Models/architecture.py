@@ -67,8 +67,8 @@ class NN_Model(nn.Module):
             in_channels_scalar = self.joint_dim
             in_channels_vec = 0
             # TODO: check how to properly use scalar vs vector outputs
-            out_channels_scalar = num_atoms # updated features
-            out_channels_vec = 1 # displacment vector
+            out_channels_scalar = self.joint_dim # updated features
+            out_channels_vec = 0 # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
                             self.hidden_dim,
