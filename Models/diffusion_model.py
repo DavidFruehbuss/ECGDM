@@ -102,16 +102,6 @@ class Conditional_Diffusion_Model(nn.Module):
         molecule, protein_pocket = z_data
         batch_size = molecule['size'].size(0)
 
-        # Debugging peptides
-        # print('Molecule pos: ', molecule['x'].shape)
-        # print('Molecule feature: ', molecule['h'].shape)
-        # print('Molecule idx: ', molecule['idx'].shape)
-        # print('Molecule size: ', molecule['size'].shape)
-        # print('Pocket pos: ', protein_pocket['x'].shape)
-        # print('Pocket feature: ', protein_pocket['h'].shape)
-        # print('Pocket idx: ', protein_pocket['idx'].shape)
-        # print('Pocket size: ', protein_pocket['size'].shape)
-
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
@@ -213,13 +203,6 @@ class Conditional_Diffusion_Model(nn.Module):
             # Two added loss terms for vlb
             loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
 
-        # Debugging peptides
-        print(loss_0.shape)
-        print(neg_log_const.shape)
-        print(loss_x_mol_t0)
-        print(loss_x_protein_t0)
-        print(loss_h_t0)
-
         # protein_pocket_fixed (again for logging)
         error_pro = 0
         loss_x_protein_t0 = 0
@@ -253,9 +236,6 @@ class Conditional_Diffusion_Model(nn.Module):
         #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
         #     'loss_h_t0': loss_h_t0.mean(0),
         # }
-
-        # Debugging peptides
-        print(f'Loss {loss.shape}')
 
         return loss.mean(0), info
 
