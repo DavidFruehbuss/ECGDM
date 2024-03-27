@@ -70,7 +70,7 @@ class Peptide_MHC_Dataset(Dataset):
                     features_peptide = features[chain_ids_peptide]
                     features_protein_pocket = features[chain_ids_protein_pocket]
 
-                    feature_length = len(features_peptide[0]) # always 20 because we only have residues
+                    feature_length = len(features_peptide) # num_nodes in each graph
 
                     # TODO: we should use these edges
                     edge_idx = graph['edge_features']['_index']
@@ -81,13 +81,13 @@ class Peptide_MHC_Dataset(Dataset):
 
                     self.data['peptide_positions'].append(torch.tensor(position_peptide))
                     self.data['peptide_features'].append(torch.tensor(features_peptide))
-                    self.data['num_peptide_residues'].append([feature_length])
-                    self.data['peptide_idx'].append([torch.ones(len(position_peptide))])
+                    self.data['num_peptide_residues'].append(feature_length)
+                    self.data['peptide_idx'].append(torch.ones(len(position_peptide)))
 
                     self.data['protein_pocket_positions'].append(torch.tensor(position_protein_pocket))
                     self.data['protein_pocket_features'].append(torch.tensor(features_protein_pocket))
-                    self.data['num_protein_pocket_residues'].append([feature_length])
-                    self.data['protein_pocket_idx'].append([torch.ones(len(position_protein_pocket))])
+                    self.data['num_protein_pocket_residues'].append(feature_length)
+                    self.data['protein_pocket_idx'].append(torch.ones(len(position_protein_pocket)))
 
             if center:
                 for i in range(len(self.data['peptide_positions'])):
@@ -139,6 +139,7 @@ class Peptide_MHC_Dataset(Dataset):
                 data_batch[key] = torch.tensor([x[key] for x in batch])
             elif 'idx' in key:
                 # make sure indices in batch start at zero (needed for torch_scatter)
+                # This doesn't work as it should
                 data_batch[key] = torch.cat([i * torch.ones(len(x[key])) for i, x in enumerate(batch)], dim=0)
             else:
                 data_batch[key] = torch.cat([x[key] for x in batch], dim=0)

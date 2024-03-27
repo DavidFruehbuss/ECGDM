@@ -102,6 +102,16 @@ class Conditional_Diffusion_Model(nn.Module):
         molecule, protein_pocket = z_data
         batch_size = molecule['size'].size(0)
 
+        # Debugging peptides
+        # print('Molecule pos: ', molecule['x'].shape)
+        # print('Molecule feature: ', molecule['h'].shape)
+        # print('Molecule idx: ', molecule['idx'].shape)
+        # print('Molecule size: ', molecule['size'].shape)
+        # print('Pocket pos: ', protein_pocket['x'].shape)
+        # print('Pocket feature: ', protein_pocket['h'].shape)
+        # print('Pocket idx: ', protein_pocket['idx'].shape)
+        # print('Pocket size: ', protein_pocket['size'].shape)
+
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
@@ -118,8 +128,9 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
         # additional evaluation (VLB) variables
-        neg_log_const = self.neg_log_const(molecule['size'] + protein_pocket['size'], batch_size, device=molecule['x'].device)
-        delta_log_px = self.delta_log_px(molecule['size'] + protein_pocket['size'])
+        # if pocket not fixed then molecule['size'] + protein_pocket['size']
+        neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
+        delta_log_px = self.delta_log_px(molecule['size'])
         # SNR is computed between timestep s and t (with s = t-1)
         SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
@@ -202,9 +213,22 @@ class Conditional_Diffusion_Model(nn.Module):
             # Two added loss terms for vlb
             loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
 
+        # Debugging peptides
+        print(loss_0.shape)
+        print(neg_log_const.shape)
+        print(loss_x_mol_t0)
+        print(loss_x_protein_t0)
+        print(loss_h_t0)
+
         # protein_pocket_fixed (again for logging)
         error_pro = 0
         loss_x_protein_t0 = 0
+
+        # handling fixed features
+        if isinstance(loss_h_t0, int):
+            loss_h_t0 = loss_h_t0
+        else:
+            loss_h_t0 = loss_h_t0.mean(0)
 
         info = {
             'loss_t': loss_t.mean(0),
@@ -213,7 +237,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'error_pro': error_pro,
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
             'loss_x_protein_t0': loss_x_protein_t0,
-            'loss_h_t0': loss_h_t0.mean(0),
+            'loss_h_t0': loss_h_t0,
             'kl_prior': kl_prior,
             'neg_log_const': neg_log_const.mean(0),
             'delta_log_px': delta_log_px.mean(0),
@@ -229,6 +253,9 @@ class Conditional_Diffusion_Model(nn.Module):
         #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
         #     'loss_h_t0': loss_h_t0.mean(0),
         # }
+
+        # Debugging peptides
+        print(f'Loss {loss.shape}')
 
         return loss.mean(0), info
 
@@ -265,9 +292,6 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
         idx_joint = torch.cat((molecule['idx'], protein_pocket['idx']))
-
-        # Debugging
-        print(xh_mol.shape, xh_pro.shape, molecule['idx'].shape, protein_pocket['idx'].shape, molecule['idx'], protein_pocket['idx'])
 
         # center the input nodes (projection to 0 COM)
         xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
