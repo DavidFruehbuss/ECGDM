@@ -1,7 +1,7 @@
 # Logging
-logdir: './Experiments/Structure_prediction/Logs/PMHC_pmhc_1/'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_1/'
 project: 'Structur_prediction'
-run_name: 'SP_MOAD_pmhc_1'
+run_name: 'SP_pmhc_egnn_1'
 entity: 'neuro-ai-scientist'
 
 # Training
