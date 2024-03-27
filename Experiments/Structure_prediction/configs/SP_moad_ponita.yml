@@ -44,12 +44,12 @@ network_params:
   edge_cutoff_pocket: 0.8
   edge_cutoff_interaction: 1.4
   # ponita specific
-  radius: None
+  radius: null
   num_ori: 12
   basis_dim: 192
   degree: 3
   widening_factor: 4
-  layer_scale: None
+  layer_scale: null
   multiple_readouts: False
 
 # Eval
