@@ -176,6 +176,8 @@ class NN_Model(nn.Module):
             # (1) need z_t_mol and z_t_pro to be of the same size but no nonlinear embedding
             h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:])
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
+            # combine molecule and protein in joint space for displacment_vector calculation
+            x_joint = torch.cat((z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim]), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
 
             # (2) add time conditioning
             if self.conditioned_on_time:
