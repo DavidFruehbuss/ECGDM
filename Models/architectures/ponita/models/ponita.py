@@ -57,7 +57,6 @@ class PonitaFiberBundle(nn.Module):
 
         # Kernel basis functions and spatial window
         basis_dim = hidden_dim if (basis_dim is None) else basis_dim
-        print(degree, hidden_dim, basis_dim)
         self.basis_fn = nn.Sequential(PolynomialFeatures(degree), nn.LazyLinear(hidden_dim), act_fn, nn.Linear(hidden_dim, basis_dim), act_fn)
         self.fiber_basis_fn = nn.Sequential(PolynomialFeatures(degree), nn.LazyLinear(hidden_dim), act_fn, nn.Linear(hidden_dim, basis_dim), act_fn)
         self.windowing_fn = PolynomialCutoff(radius)

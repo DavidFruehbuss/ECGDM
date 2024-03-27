@@ -191,7 +191,7 @@ class NN_Model(nn.Module):
             h_mol_split = torch.split(h_mol, counts_mol.tolist()) # list([graph_num_nodes, num_atoms], len(batch_size))
             h_pro_split = torch.split(h_pro, counts_pro.tolist()) # list([graph_num_nodes, num_residues], len(batch_size))
             x_mol_split = torch.split(x_mol, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
-            x_pro_split = torch.split(x_pro, counts_mol.tolist()) # list([graph_num_nodes, 3], len(batch_size))
+            x_pro_split = torch.split(x_pro, counts_pro.tolist()) # list([graph_num_nodes, 3], len(batch_size))
             h_split = [torch.cat((h_mol_split[i], h_pro_split[i]), dim=0) for i in range(len(h_mol_split))]
             x_split = [torch.cat((x_mol_split[i], x_pro_split[i]), dim=0) for i in range(len(x_mol_split))]
 
