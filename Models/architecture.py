@@ -64,10 +64,10 @@ class NN_Model(nn.Module):
                 self.joint_dim += 1
 
             # dimensions for ponita model
-            in_channels_scalar = None
+            in_channels_scalar = 0
             in_channels_vec = self.joint_dim
             # TODO: check how to properly use scalar vs vector outputs
-            out_channels_scalar = None # updated features
+            out_channels_scalar = 0 # updated features
             out_channels_vec = self.joint_dim # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
