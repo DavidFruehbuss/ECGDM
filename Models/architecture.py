@@ -214,6 +214,8 @@ class NN_Model(nn.Module):
             h_new, x_new = self.ponita(batched_graph)
 
             # (6) calculate displacement vectors (possibly not necessary see step 5.)
+            print(x_new.shape)
+            print(x_joint.shape)
             displacement_vec = (x_new - x_joint)
 
             
