@@ -50,7 +50,7 @@ if __name__ == "__main__":
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         dirpath=Path(args.logdir, 'checkpoints'),
         filename="best-model-epoch={epoch:02d}",
-        monitor="loss_t",
+        monitor="error_molval",
         save_top_k=1,
         save_last=True,
         mode="min",
