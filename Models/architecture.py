@@ -67,8 +67,8 @@ class NN_Model(nn.Module):
             in_channels_scalar = self.joint_dim
             in_channels_vec = 0
             # TODO: check how to properly use scalar vs vector outputs
-            out_channels_scalar = self.joint_dim # updated features
-            out_channels_vec = 0 # displacment vector
+            out_channels_scalar = 1 # updated features
+            out_channels_vec = 1 # displacment vector
 
             self.ponita = Ponita(in_channels_scalar + in_channels_vec,
                             self.hidden_dim,
@@ -188,6 +188,7 @@ class NN_Model(nn.Module):
 
             # (3) need to save [x, h, edges] as [graph.pos, graph.x, graph.edge_index]
             # (might want to make a helper function for this, can use molecule['size'] object)
+            # for orientation add .vec object 
             _, counts_mol = torch.unique(molecule_idx, return_counts=True)
             _, counts_pro = torch.unique(protein_pocket_idx, return_counts=True)
             h_mol_split = torch.split(h_mol, counts_mol.tolist()) # list([graph_num_nodes, num_atoms], len(batch_size))
@@ -214,8 +215,12 @@ class NN_Model(nn.Module):
             h_new, x_new = self.ponita(batched_graph)
 
             # (6) calculate displacement vectors (possibly not necessary see step 5.)
-            x_new = h_new[:,:self.x_dim]
-            displacement_vec = (x_new - x_joint)
+            # for orientation predict orientation noise .vec (add and need to normalize)
+            # rotation_matrix or quaternions (rotations rel. to corrdinate systems) (Gramsmitth orthogonalisation of 3 vec)
+            # 
+            # TODO: retruns predicted noise x_new = [batch, 1, 3]
+            # x_new = h_new[:,:self.x_dim]
+            displacement_vec = x_new.squeeze(1) # ([batch, 1, 3] - [batch, 3])
 
             
         elif self.architecture == 'egnn' or self.architecture == 'gnn':
