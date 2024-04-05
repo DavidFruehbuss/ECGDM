@@ -426,13 +426,18 @@ class Conditional_Diffusion_Model(nn.Module):
         # If we want a new peptide we would have to add random sampling of the start peptide here
 
         # Normalisation
-        molecule['x'] = molecule['x'] / self.norm_values[0]
+        # molecule['x'] = molecule['x'] / self.norm_values[0]
         molecule['h'] = molecule['h'] / self.norm_values[1]
         protein_pocket['x'] = protein_pocket['x'] / self.norm_values[0]
         protein_pocket['h'] = protein_pocket['h'] / self.norm_values[1]
 
+        # start with random peptide position (target hidden)
+        # mean=COM, sigma=1, and sample epsioln
+        rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device)
+        molecule_x = protein_pocket_com_before[molecule['idx']] + rand_eps_x
+
         # combine position and features
-        xh_mol = torch.cat((molecule['x'], molecule['h']), dim=1)
+        xh_mol = torch.cat((molecule_x, molecule['h']), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
         # project both pocket and peptide to 0 COM
@@ -440,7 +445,6 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
 
         # Iterativly denoise stepwise for t = T,...,1
-        # could add some noise to the input peptide (similar to sampling of new peptide)
         for s in reversed(range(0,self.T)):
 
             # time arrays
