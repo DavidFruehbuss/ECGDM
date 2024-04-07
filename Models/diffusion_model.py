@@ -120,7 +120,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         if self.protein_pocket_fixed:
             # TODO: Find correct shape for error_pro
-            error_pro = torch.zeros(protein_pocket['size'].size(0))
+            error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
         else:
             error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
@@ -435,11 +435,11 @@ class Conditional_Diffusion_Model(nn.Module):
         loss_x_mol_t0 = - 0.5 * scatter_add(torch.sum((epsilon_mol_x - epsilon_hat_mol_x)**2, dim=-1), molecule['idx'], dim=0)
 
         # TODO: if protein pocket not fixed add loss_x_protein_t0 computation
-        loss_x_protein_t0 = torch.zeros(protein_pocket['size'].size(0))
+        loss_x_protein_t0 = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
 
         if self.features_fixed:
 
-            loss_h_t0 = torch.zeros(molecule['size'].size(0))
+            loss_h_t0 = torch.zeros(molecule['size'].size(0), device=molecule['x'].device)
 
         else:
 
