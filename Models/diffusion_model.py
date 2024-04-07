@@ -117,21 +117,23 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # TODO: Put loss computation in subfunctions
         # loss, info = train_loss()
+        # molecule, z_t_mol, epsilon_mol, epsilon_hat_mol, protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
         # loss, info = validation_loss()
-
-        # compute the sum squared error loss per graph
-        error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
-
-        if self.protein_pocket_fixed:
-            # TODO: Find correct shape for error_pro
-            error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
-        else:
-            error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
-
-        # TODO: add KL_prior loss (neglebile)
-        kl_prior = 0
+        # molecule, z_t_mol, epsilon_mol, epsilon_hat_mol, protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
 
         if self.training:
+
+            # compute the sum squared error loss per graph
+            error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
+
+            if self.protein_pocket_fixed:
+                # TODO: Find correct shape for error_pro
+                error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+            else:
+                error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
+
+            # TODO: add KL_prior loss (neglebile)
+            kl_prior = 0
 
             # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
             t_0_mask = (t == 0).float().squeeze()
@@ -175,6 +177,18 @@ class Conditional_Diffusion_Model(nn.Module):
         else: 
 
             ### Additional evaluation (VLB) variables
+
+            # compute the sum squared error loss per graph
+            error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
+
+            if self.protein_pocket_fixed:
+                # TODO: Find correct shape for error_pro
+                error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+            else:
+                error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
+
+            # TODO: add KL_prior loss (neglebile)
+            kl_prior = 0
 
             # if pocket not fixed then molecule['size'] + protein_pocket['size']
             neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
@@ -220,7 +234,7 @@ class Conditional_Diffusion_Model(nn.Module):
                 'error_pro': error_pro.mean(0),
                 'loss_x_mol_t0': loss_x_mol_t0.mean(0),
                 'loss_x_protein_t0': loss_x_protein_t0.mean(0),
-                'loss_h_t0': loss_h_t0,
+                'loss_h_t0': loss_h_t0.mean(0),
                 'kl_prior': kl_prior,
                 'neg_log_const': neg_log_const.mean(0),
                 'delta_log_px': delta_log_px.mean(0),
