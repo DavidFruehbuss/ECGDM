@@ -18,7 +18,7 @@ class NN_Model(nn.Module):
     def __init__(
             self,
             architecture: str,
-            pocket_position_fixed: bool,
+            protein_pocket_fixed: bool,
             network_params,
             num_atoms: int,
             num_residues: int,
@@ -34,7 +34,7 @@ class NN_Model(nn.Module):
         super().__init__()
 
         self.architecture = architecture
-        self.pocket_position_fixed = pocket_position_fixed
+        self.protein_pocket_fixed = protein_pocket_fixed
         self.x_dim = 3
         self.act_fn = nn.SiLU()
 
@@ -206,11 +206,11 @@ class NN_Model(nn.Module):
             batched_graph.edge_index = edges
 
             # (4) TODO: choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
-            if self.pocket_position_fixed:
+            if self.protein_pocket_fixed:
                 # raise NotImplementedError
-                pocket_position_fixed = torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
+                protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
             else:
-                pocket_position_fixed = None
+                protein_pocket_fixed = None
 
             # (5) ponita forward pass (x_new could also be the displacment vector directly)
             h_new, x_new = self.ponita(batched_graph)
@@ -254,12 +254,12 @@ class NN_Model(nn.Module):
             if self.architecture == 'egnn':
 
                 # choose whether to get protein_pocket corrdinates fixed
-                pocket_position_fixed = None if self.pocket_position_fixed \
+                protein_pocket_fixed = None if self.protein_pocket_fixed \
                     else torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
 
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
-                                            update_coords_mask=pocket_position_fixed,
+                                            update_coords_mask=protein_pocket_fixed,
                                             batch_mask=idx_joint, edge_attr=edge_types)
                 
                 # calculate displacement vectors
