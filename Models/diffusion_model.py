@@ -123,124 +123,132 @@ class Conditional_Diffusion_Model(nn.Module):
 
         if self.training:
 
-            # compute the sum squared error loss per graph
-            error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
+            loss, info = self.train_loss(molecule, z_t_mol, epsilon_mol, 
+                                         epsilon_hat_mol,protein_pocket, 
+                                         z_t_pro, epsilon_pro, epsilon_hat_pro, t)
 
-            if self.protein_pocket_fixed:
-                # TODO: Find correct shape for error_pro
-                error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
-            else:
-                error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
+            # # compute the sum squared error loss per graph
+            # error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
 
-            # TODO: add KL_prior loss (neglebile)
-            kl_prior = 0
+            # if self.protein_pocket_fixed:
+            #     # TODO: Find correct shape for error_pro
+            #     error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+            # else:
+            #     error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
-            # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
-            t_0_mask = (t == 0).float().squeeze()
-            t_not_0_mask = 1 - t_0_mask
+            # # TODO: add KL_prior loss (neglebile)
+            # kl_prior = 0
 
-            loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
-                molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
-                protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
-            )
+            # # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
+            # t_0_mask = (t == 0).float().squeeze()
+            # t_not_0_mask = 1 - t_0_mask
 
-            # seperate loss computation for t = 0 and t != 0
-            loss_x_mol_t0 = - loss_x_mol_t0 * t_0_mask
-            loss_x_protein_t0 = - loss_x_protein_t0 * t_0_mask
-            loss_h_t0 = - loss_h_t0 * t_0_mask
-            error_mol = error_mol * t_not_0_mask
-            error_pro = error_pro * t_not_0_mask
+            # loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+            #     molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
+            #     protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
+            # )
 
-            # Normalize loss_t by graph size
-            error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
-            error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
-            loss_t = 0.5 * (error_mol + error_pro)
+            # # seperate loss computation for t = 0 and t != 0
+            # loss_x_mol_t0 = - loss_x_mol_t0 * t_0_mask
+            # loss_x_protein_t0 = - loss_x_protein_t0 * t_0_mask
+            # loss_h_t0 = - loss_h_t0 * t_0_mask
+            # error_mol = error_mol * t_not_0_mask
+            # error_pro = error_pro * t_not_0_mask
 
-            # Normalize loss_0 by graph size
-            loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
-            loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
-            loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+            # # Normalize loss_t by graph size
+            # error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+            # error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
+            # loss_t = 0.5 * (error_mol + error_pro)
 
-            loss = loss_t + loss_0 + kl_prior
+            # # Normalize loss_0 by graph size
+            # loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
+            # loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
+            # loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
 
-            info = {
-                'loss_t': loss_t.mean(0),
-                'loss_0': loss_0.mean(0),
-                'error_mol': error_mol.mean(0),
-                'error_pro': error_pro.mean(0),
-                'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-                'loss_x_protein_t0': loss_x_protein_t0.mean(0),
-                'loss_h_t0': loss_h_t0.mean(0),
-                'kl_prior': kl_prior,
-            }
+            # loss = loss_t + loss_0 + kl_prior
+
+            # info = {
+            #     'loss_t': loss_t.mean(0),
+            #     'loss_0': loss_0.mean(0),
+            #     'error_mol': error_mol.mean(0),
+            #     'error_pro': error_pro.mean(0),
+            #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+            #     'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+            #     'loss_h_t0': loss_h_t0.mean(0),
+            #     'kl_prior': kl_prior,
+            # }
 
         else: 
 
-            ### Additional evaluation (VLB) variables
+            loss, info = self.validation_loss(z_data, molecule, z_t_mol, epsilon_mol, 
+                                         epsilon_hat_mol,protein_pocket, 
+                                         z_t_pro, epsilon_pro, epsilon_hat_pro, t)
 
-            # compute the sum squared error loss per graph
-            error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
+            # ### Additional evaluation (VLB) variables
 
-            if self.protein_pocket_fixed:
-                # TODO: Find correct shape for error_pro
-                error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
-            else:
-                error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
+            # # compute the sum squared error loss per graph
+            # error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
 
-            # TODO: add KL_prior loss (neglebile)
-            kl_prior = 0
+            # if self.protein_pocket_fixed:
+            #     # TODO: Find correct shape for error_pro
+            #     error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+            # else:
+            #     error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
-            # if pocket not fixed then molecule['size'] + protein_pocket['size']
-            neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
-            delta_log_px = self.delta_log_px(molecule['size'])
-            # SNR is computed between timestep s and t (with s = t-1)
-            SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+            # # TODO: add KL_prior loss (neglebile)
+            # kl_prior = 0
 
-            # TODO: add log_pN computation using the dataset histogram
-            log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
+            # # if pocket not fixed then molecule['size'] + protein_pocket['size']
+            # neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
+            # delta_log_px = self.delta_log_px(molecule['size'])
+            # # SNR is computed between timestep s and t (with s = t-1)
+            # SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
-            # TODO optional: can add auxiliary loss / lennard-jones potential
+            # # TODO: add log_pN computation using the dataset histogram
+            # log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
 
-            ## For evaluation we want to compute t = 0 losses for all z_data samples that we have
+            # # TODO optional: can add auxiliary loss / lennard-jones potential
 
-            # compute noised sample for t = 0
-            z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
+            # ## For evaluation we want to compute t = 0 losses for all z_data samples that we have
 
-            # use neural network to predict noise for t = 0
-            epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'])
+            # # compute noised sample for t = 0
+            # z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
 
-            loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
-                molecule, z_0_mol, epsilon_0_mol, epsilon_hat_0_mol,
-                protein_pocket, z_0_pro, epsilon_0_pro, epsilon_hat_0_pro, t_0
-            )
+            # # use neural network to predict noise for t = 0
+            # epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'])
 
-            loss_x_mol_t0 = - loss_x_mol_t0
-            loss_x_protein_t0 = - loss_x_protein_t0
-            loss_h_t0 = - loss_h_t0
+            # loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+            #     molecule, z_0_mol, epsilon_0_mol, epsilon_hat_0_mol,
+            #     protein_pocket, z_0_pro, epsilon_0_pro, epsilon_hat_0_pro, t_0
+            # )
 
-            ## For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
+            # loss_x_mol_t0 = - loss_x_mol_t0
+            # loss_x_protein_t0 = - loss_x_protein_t0
+            # loss_h_t0 = - loss_h_t0
 
-            loss_t = - self.T * 0.5 * SNR_weight * (error_mol + error_pro)
-            loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
-            loss_0 = loss_0 + neg_log_const
+            # ## For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
 
-            # Two added loss terms for vlb
-            loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
+            # loss_t = - self.T * 0.5 * SNR_weight * (error_mol + error_pro)
+            # loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+            # loss_0 = loss_0 + neg_log_const
 
-            info = {
-                'loss_t': loss_t.mean(0),
-                'loss_0': loss_0.mean(0),
-                'error_mol': error_mol.mean(0),
-                'error_pro': error_pro.mean(0),
-                'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-                'loss_x_protein_t0': loss_x_protein_t0.mean(0),
-                'loss_h_t0': loss_h_t0.mean(0),
-                'kl_prior': kl_prior,
-                'neg_log_const': neg_log_const.mean(0),
-                'delta_log_px': delta_log_px.mean(0),
-                'log_pN': log_pN,
-                'SNR_weight': SNR_weight.mean(0)
-            }
+            # # Two added loss terms for vlb
+            # loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
+
+            # info = {
+            #     'loss_t': loss_t.mean(0),
+            #     'loss_0': loss_0.mean(0),
+            #     'error_mol': error_mol.mean(0),
+            #     'error_pro': error_pro.mean(0),
+            #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+            #     'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+            #     'loss_h_t0': loss_h_t0.mean(0),
+            #     'kl_prior': kl_prior,
+            #     'neg_log_const': neg_log_const.mean(0),
+            #     'delta_log_px': delta_log_px.mean(0),
+            #     'log_pN': log_pN,
+            #     'SNR_weight': SNR_weight.mean(0)
+            # }
 
 
 
@@ -406,46 +414,136 @@ class Conditional_Diffusion_Model(nn.Module):
 
         return z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t
     
-    def delta_log_px(self, num_nodes):
+    def train_loss(
+            self, molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
+            protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, 
+            t,
+    ):
+        # compute the sum squared error loss per graph
+        error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
 
-        delta_log_px = - (num_nodes - 1) * self.x_dim * np.log(self.norm_values[0])
+        if self.protein_pocket_fixed:
+            error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+        else:
+            error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
-        return delta_log_px
+        # TODO: add KL_prior loss (neglebile)
+        kl_prior = 0
+
+        # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
+        t_0_mask = (t == 0).float().squeeze()
+        t_not_0_mask = 1 - t_0_mask
+
+        loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+            molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
+            protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
+        )
+
+        # seperate loss computation for t = 0 and t != 0
+        loss_x_mol_t0 = - loss_x_mol_t0 * t_0_mask
+        loss_x_protein_t0 = - loss_x_protein_t0 * t_0_mask
+        loss_h_t0 = - loss_h_t0 * t_0_mask
+        error_mol = error_mol * t_not_0_mask
+        error_pro = error_pro * t_not_0_mask
+
+        # Normalize loss_t by graph size
+        error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+        error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
+        loss_t = 0.5 * (error_mol + error_pro)
+
+        # Normalize loss_0 by graph size
+        loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
+        loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
+        loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+
+        loss = loss_t + loss_0 + kl_prior
+
+        info = {
+            'loss_t': loss_t.mean(0),
+            'loss_0': loss_0.mean(0),
+            'error_mol': error_mol.mean(0),
+            'error_pro': error_pro.mean(0),
+            'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+            'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+            'loss_h_t0': loss_h_t0.mean(0),
+            'kl_prior': kl_prior,
+        }
+
+        return loss, info
     
-    def log_pN(self, molecule_N, protein_pocket_N):
+    def validation_loss(
+            self, z_data, molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
+            protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, 
+            t,
+    ):
+        ### Additional evaluation (VLB) variables
 
-        # add log_pN computation using the dataset histogram
-        log_pN = 0
+        # compute the sum squared error loss per graph
+        error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
 
-        return log_pN
-    
-    def neg_log_const(self, num_nodes, batch_size, device):
+        if self.protein_pocket_fixed:
+            # TODO: Find correct shape for error_pro
+            error_pro = torch.zeros(protein_pocket['size'].size(0), device=molecule['x'].device)
+        else:
+            error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
-        t0 = torch.zeros((batch_size, 1), device=device)
-        log_sigma_0 = torch.log(self.noise_schedule(t0, 'sigma')).view(batch_size)
+        # TODO: add KL_prior loss (neglebile)
+        kl_prior = 0
 
-        neg_log_const = - ((num_nodes - 1) * self.x_dim) * (- log_sigma_0 - 0.5 * np.log(2 * np.pi))
+        # if pocket not fixed then molecule['size'] + protein_pocket['size']
+        neg_log_const = self.neg_log_const(molecule['size'], molecule['size'].size(0), device=molecule['x'].device)
+        delta_log_px = self.delta_log_px(molecule['size'])
+        # SNR is computed between timestep s and t (with s = t-1)
+        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
 
-        return neg_log_const
-    
-    def SNR_s_t(self, t):
+        # TODO: add log_pN computation using the dataset histogram
+        log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
 
-        '''
-        computes the SNR between t and the previous timestep t-1
-        (why not t and 0?)
-        '''
+        # TODO optional: can add auxiliary loss / lennard-jones potential
 
-        s = torch.round(t * self.T).long() - 1
-        s = s / self.T
+        ## For evaluation we want to compute t = 0 losses for all z_data samples that we have
 
-        alpha2_t = self.noise_schedule(t, 'alpha')**2
-        alpha2_s = self.noise_schedule(s, 'alpha')**2
-        sigma2_t = self.noise_schedule(t, 'sigma')**2
-        sigma2_s = self.noise_schedule(s, 'sigma')**2
+        # compute noised sample for t = 0
+        z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
 
-        SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
+        # use neural network to predict noise for t = 0
+        epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'])
 
-        return SNR_s_t
+        loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+            molecule, z_0_mol, epsilon_0_mol, epsilon_hat_0_mol,
+            protein_pocket, z_0_pro, epsilon_0_pro, epsilon_hat_0_pro, t_0
+        )
+
+        loss_x_mol_t0 = - loss_x_mol_t0
+        loss_x_protein_t0 = - loss_x_protein_t0
+        loss_h_t0 = - loss_h_t0
+
+        ## For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
+
+        loss_t = - self.T * 0.5 * SNR_weight * (error_mol + error_pro)
+        loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+        loss_0 = loss_0 + neg_log_const
+
+        # Two added loss terms for vlb
+        loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
+
+        info = {
+            'loss_t': loss_t.mean(0),
+            'loss_0': loss_0.mean(0),
+            'error_mol': error_mol.mean(0),
+            'error_pro': error_pro.mean(0),
+            'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+            'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+            'loss_h_t0': loss_h_t0.mean(0),
+            'kl_prior': kl_prior,
+            'neg_log_const': neg_log_const.mean(0),
+            'delta_log_px': delta_log_px.mean(0),
+            'log_pN': log_pN,
+            'SNR_weight': SNR_weight.mean(0)
+        }
+
+        return loss, info
+        
     
     def loss_t0(
             self, molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
@@ -499,6 +597,47 @@ class Conditional_Diffusion_Model(nn.Module):
             loss_h_t0 = scatter_add(torch.sum(log_probabilities_mol * molecule['h'], dim=-1), molecule['idx'], dim=0)
         
         return loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
+    
+    def delta_log_px(self, num_nodes):
+
+        delta_log_px = - (num_nodes - 1) * self.x_dim * np.log(self.norm_values[0])
+
+        return delta_log_px
+    
+    def log_pN(self, molecule_N, protein_pocket_N):
+
+        # add log_pN computation using the dataset histogram
+        log_pN = 0
+
+        return log_pN
+    
+    def neg_log_const(self, num_nodes, batch_size, device):
+
+        t0 = torch.zeros((batch_size, 1), device=device)
+        log_sigma_0 = torch.log(self.noise_schedule(t0, 'sigma')).view(batch_size)
+
+        neg_log_const = - ((num_nodes - 1) * self.x_dim) * (- log_sigma_0 - 0.5 * np.log(2 * np.pi))
+
+        return neg_log_const
+    
+    def SNR_s_t(self, t):
+
+        '''
+        computes the SNR between t and the previous timestep t-1
+        (why not t and 0?)
+        '''
+
+        s = torch.round(t * self.T).long() - 1
+        s = s / self.T
+
+        alpha2_t = self.noise_schedule(t, 'alpha')**2
+        alpha2_s = self.noise_schedule(s, 'alpha')**2
+        sigma2_t = self.noise_schedule(t, 'sigma')**2
+        sigma2_s = self.noise_schedule(s, 'sigma')**2
+
+        SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
+
+        return SNR_s_t
     
     @torch.no_grad()
     def sample_structure(
