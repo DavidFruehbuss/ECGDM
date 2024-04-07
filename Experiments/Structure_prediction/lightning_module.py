@@ -54,7 +54,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.neural_net = NN_Model(
             # model parameters
             architecture,
-            task_params.pocket_position_fixed
+            task_params.pocket_position_fixed,
             network_params,
             dataset_params.num_atoms,
             dataset_params.num_residues,
