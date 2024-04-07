@@ -115,6 +115,10 @@ class Conditional_Diffusion_Model(nn.Module):
 
         ## Loss computation part (1) t != 0
 
+        # TODO: Put loss computation in subfunctions
+        # loss, info = train_loss()
+        # loss, info = validation_loss()
+
         # compute the sum squared error loss per graph
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
 
@@ -157,6 +161,17 @@ class Conditional_Diffusion_Model(nn.Module):
 
             loss = loss_t + loss_0 + kl_prior
 
+            info = {
+                'loss_t': loss_t.mean(0),
+                'loss_0': loss_0.mean(0),
+                'error_mol': error_mol.mean(0),
+                'error_pro': error_pro.mean(0),
+                'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+                'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+                'loss_h_t0': loss_h_t0.mean(0),
+                'kl_prior': kl_prior,
+            }
+
         else: 
 
             ### Additional evaluation (VLB) variables
@@ -197,6 +212,21 @@ class Conditional_Diffusion_Model(nn.Module):
 
             # Two added loss terms for vlb
             loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
+
+            info = {
+                'loss_t': loss_t.mean(0),
+                'loss_0': loss_0.mean(0),
+                'error_mol': error_mol.mean(0),
+                'error_pro': error_pro.mean(0),
+                'loss_x_mol_t0': loss_x_mol_t0.mean(0),
+                'loss_x_protein_t0': loss_x_protein_t0.mean(0),
+                'loss_h_t0': loss_h_t0,
+                'kl_prior': kl_prior,
+                'neg_log_const': neg_log_const.mean(0),
+                'delta_log_px': delta_log_px.mean(0),
+                'log_pN': log_pN,
+                'SNR_weight': SNR_weight.mean(0)
+            }
 
 
 
@@ -288,26 +318,11 @@ class Conditional_Diffusion_Model(nn.Module):
         # error_pro = 0
         # loss_x_protein_t0 = 0
 
-        # handling fixed features
-        if isinstance(loss_h_t0, int):
-            loss_h_t0 = loss_h_t0
-        else:
-            loss_h_t0 = loss_h_t0.mean(0)
-
-        info = {
-            'loss_t': loss_t.mean(0),
-            'loss_0': loss_0.mean(0),
-            'error_mol': error_mol.mean(0),
-            'error_pro': error_pro.mean(0),
-            'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-            'loss_x_protein_t0': loss_x_protein_t0.mean(0),
-            'loss_h_t0': loss_h_t0,
-            'kl_prior': kl_prior,
-            'neg_log_const': neg_log_const.mean(0),
-            'delta_log_px': delta_log_px.mean(0),
-            'log_pN': log_pN,
-            'SNR_weight': SNR_weight.mean(0)
-        }
+        # # handling fixed features
+        # if isinstance(loss_h_t0, int):
+        #     loss_h_t0 = loss_h_t0
+        # else:
+        #     loss_h_t0 = loss_h_t0.mean(0)
 
         return loss.mean(0), info
 
