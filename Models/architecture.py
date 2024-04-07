@@ -18,6 +18,7 @@ class NN_Model(nn.Module):
     def __init__(
             self,
             architecture: str,
+            pocket_position_fixed: bool,
             network_params,
             num_atoms: int,
             num_residues: int,
@@ -33,13 +34,13 @@ class NN_Model(nn.Module):
         super().__init__()
 
         self.architecture = architecture
+        self.pocket_position_fixed = pocket_position_fixed
         self.x_dim = 3
         self.act_fn = nn.SiLU()
 
         self.joint_dim = network_params.joint_dim
         self.hidden_dim = network_params.hidden_dim
         self.num_layers = network_params.num_layers
-        self.pocket_position_fixed = network_params.pocket_position_fixed
         self.conditioned_on_time = network_params.conditioned_on_time
 
         # edge parameters
