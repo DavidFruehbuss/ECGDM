@@ -3,10 +3,19 @@ from argparse import Namespace
 from pathlib import Path
 import yaml
 
+# import os
+# import sys
+
 import pytorch_lightning as pl
 from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 
 if __name__ == "__main__":
+	
+	# desired_directory = '/gpfs/home4/dfruhbus/ECGDM/'
+	# os.chdir(desired_directory)
+	# sys.path.insert(0, desired_directory)
+	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+
 
     # read in config
     parser = argparse.ArgumentParser()
@@ -50,7 +59,7 @@ if __name__ == "__main__":
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         dirpath=Path(args.logdir, 'checkpoints'),
         filename="best-model-epoch={epoch:02d}",
-        monitor="error_molval",
+        monitor="error_mol_val",
         save_top_k=1,
         save_last=True,
         mode="min",
