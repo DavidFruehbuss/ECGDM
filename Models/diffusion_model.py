@@ -70,6 +70,7 @@ class Conditional_Diffusion_Model(nn.Module):
     def __init__(
         self,
         neural_net: nn.Module,
+        protein_pocket_fixed: bool,
         features_fixed: bool,
         timesteps: int,
         num_atoms: int,
@@ -86,6 +87,7 @@ class Conditional_Diffusion_Model(nn.Module):
         
         self.neural_net = neural_net
         self.T = timesteps
+        self.protein_pocket_fixed = protein_pocket_fixed
         self.features_fixed = features_fixed
 
         # dataset info
@@ -115,29 +117,21 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # compute the sum squared error loss per graph
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
-        error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1)**2, protein_pocket['idx'], dim=0)
 
-        # additional evaluation (VLB) variables
-        # if pocket not fixed then molecule['size'] + protein_pocket['size']
-        neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
-        delta_log_px = self.delta_log_px(molecule['size'])
-        # SNR is computed between timestep s and t (with s = t-1)
-        SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+        if self.protein_pocket_fixed:
+            # TODO: Find correct shape for error_pro
+            error_pro = torch.zeros(protein_pocket['size'].size(0))
+        else:
+            error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
         # TODO: add KL_prior loss (neglebile)
         kl_prior = 0
-        # TODO: add log_pN computation using the dataset histogram
-        log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
-
-        # TODO optional: can add auxiliary loss / lennard-jones potential
-
-        ## Loss computation part (2) t = 0
-
-        # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
-        t_0_mask = (t == 0).float().squeeze()
-        t_not_0_mask = 1 - t_0_mask
 
         if self.training:
+
+            # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
+            t_0_mask = (t == 0).float().squeeze()
+            t_not_0_mask = 1 - t_0_mask
 
             loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
                 molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
@@ -151,9 +145,34 @@ class Conditional_Diffusion_Model(nn.Module):
             error_mol = error_mol * t_not_0_mask
             error_pro = error_pro * t_not_0_mask
 
-        else:
+            # Normalize loss_t by graph size
+            error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+            error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
+            loss_t = 0.5 * (error_mol + error_pro)
 
-            # For evaluation we want to compute t = 0 losses for all z_data samples that we have
+            # Normalize loss_0 by graph size
+            loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
+            loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
+            loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+
+            loss = loss_t + loss_0 + kl_prior
+
+        else: 
+
+            ### Additional evaluation (VLB) variables
+
+            # if pocket not fixed then molecule['size'] + protein_pocket['size']
+            neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
+            delta_log_px = self.delta_log_px(molecule['size'])
+            # SNR is computed between timestep s and t (with s = t-1)
+            SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+
+            # TODO: add log_pN computation using the dataset histogram
+            log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
+
+            # TODO optional: can add auxiliary loss / lennard-jones potential
+
+            ## For evaluation we want to compute t = 0 losses for all z_data samples that we have
 
             # compute noised sample for t = 0
             z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
@@ -170,31 +189,7 @@ class Conditional_Diffusion_Model(nn.Module):
             loss_x_protein_t0 = - loss_x_protein_t0
             loss_h_t0 = - loss_h_t0
 
-        ## Loss computation part (3) Normalisation
-            
-        # Loss terms: error_mol, error_pro, loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
-            
-        # protein_pocket_fixed
-        error_pro = 0
-        loss_x_protein_t0 = 0
-            
-        if self.training:
-
-            # Normalize loss_t by graph size
-            error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
-            error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
-            loss_t = 0.5 * (error_mol + error_pro)
-
-            # Normalize loss_0 by graph size
-            loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
-            loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
-            loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
-
-            loss = loss_t + loss_0 + kl_prior
-
-        else:
-
-            # For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
+            ## For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
 
             loss_t = - self.T * 0.5 * SNR_weight * (error_mol + error_pro)
             loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
@@ -203,9 +198,95 @@ class Conditional_Diffusion_Model(nn.Module):
             # Two added loss terms for vlb
             loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
 
-        # protein_pocket_fixed (again for logging)
-        error_pro = 0
-        loss_x_protein_t0 = 0
+
+
+        # # additional evaluation (VLB) variables
+        # # if pocket not fixed then molecule['size'] + protein_pocket['size']
+        # neg_log_const = self.neg_log_const(molecule['size'], batch_size, device=molecule['x'].device)
+        # delta_log_px = self.delta_log_px(molecule['size'])
+        # # SNR is computed between timestep s and t (with s = t-1)
+        # SNR_weight = (1 - self.SNR_s_t(t).squeeze(1))
+
+        # # TODO: add log_pN computation using the dataset histogram
+        # log_pN = self.log_pN(molecule['size'], protein_pocket['size'])
+
+        # # TODO optional: can add auxiliary loss / lennard-jones potential
+
+        # ## Loss computation part (2) t = 0
+
+        # if self.training:
+
+        #     # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
+        #     t_0_mask = (t == 0).float().squeeze()
+        #     t_not_0_mask = 1 - t_0_mask
+
+        #     loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+        #         molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
+        #         protein_pocket, z_t_pro, epsilon_pro, epsilon_hat_pro, t
+        #     )
+
+        #     # seperate loss computation for t = 0 and t != 0
+        #     loss_x_mol_t0 = - loss_x_mol_t0 * t_0_mask
+        #     loss_x_protein_t0 = - loss_x_protein_t0 * t_0_mask
+        #     loss_h_t0 = - loss_h_t0 * t_0_mask
+        #     error_mol = error_mol * t_not_0_mask
+        #     error_pro = error_pro * t_not_0_mask
+
+        # else:
+
+        #     # For evaluation we want to compute t = 0 losses for all z_data samples that we have
+
+        #     # compute noised sample for t = 0
+        #     z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
+
+        #     # use neural network to predict noise for t = 0
+        #     epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'])
+
+        #     loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
+        #         molecule, z_0_mol, epsilon_0_mol, epsilon_hat_0_mol,
+        #         protein_pocket, z_0_pro, epsilon_0_pro, epsilon_hat_0_pro, t_0
+        #     )
+
+        #     loss_x_mol_t0 = - loss_x_mol_t0
+        #     loss_x_protein_t0 = - loss_x_protein_t0
+        #     loss_h_t0 = - loss_h_t0
+
+        # ## Loss computation part (3) Normalisation
+            
+        # # Loss terms: error_mol, error_pro, loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
+            
+        # # protein_pocket_fixed
+        # error_pro = 0
+        # loss_x_protein_t0 = 0
+            
+        # if self.training:
+
+        #     # Normalize loss_t by graph size
+        #     error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+        #     error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
+        #     loss_t = 0.5 * (error_mol + error_pro)
+
+        #     # Normalize loss_0 by graph size
+        #     loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
+        #     loss_x_protein_t0 = loss_x_protein_t0 / (self.x_dim * protein_pocket['size'])
+        #     loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+
+        #     loss = loss_t + loss_0 + kl_prior
+
+        # else:
+
+        #     # For evaluation we don't normalize ??? and compte vlb instead of l2 (currently vlb = l2)
+
+        #     loss_t = - self.T * 0.5 * SNR_weight * (error_mol + error_pro)
+        #     loss_0 = loss_x_mol_t0 + loss_x_protein_t0 + loss_h_t0
+        #     loss_0 = loss_0 + neg_log_const
+
+        #     # Two added loss terms for vlb
+        #     loss = loss_t + loss_0 + kl_prior - delta_log_px - log_pN
+
+        # # protein_pocket_fixed (again for logging)
+        # error_pro = 0
+        # loss_x_protein_t0 = 0
 
         # handling fixed features
         if isinstance(loss_h_t0, int):
@@ -217,9 +298,9 @@ class Conditional_Diffusion_Model(nn.Module):
             'loss_t': loss_t.mean(0),
             'loss_0': loss_0.mean(0),
             'error_mol': error_mol.mean(0),
-            'error_pro': error_pro,
+            'error_pro': error_pro.mean(0),
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-            'loss_x_protein_t0': loss_x_protein_t0,
+            'loss_x_protein_t0': loss_x_protein_t0.mean(0),
             'loss_h_t0': loss_h_t0,
             'kl_prior': kl_prior,
             'neg_log_const': neg_log_const.mean(0),
@@ -227,15 +308,6 @@ class Conditional_Diffusion_Model(nn.Module):
             'log_pN': log_pN,
             'SNR_weight': SNR_weight.mean(0)
         }
-
-        # info = {
-        #     'loss_t': loss_t.mean(0),
-        #     'loss_0': loss_0.mean(0),
-        #     'error_mol': error_mol.mean(0),
-        #     'loss_0': loss_0.mean(0),
-        #     'loss_x_mol_t0': loss_x_mol_t0.mean(0),
-        #     'loss_h_t0': loss_h_t0.mean(0),
-        # }
 
         return loss.mean(0), info
 
@@ -363,11 +435,11 @@ class Conditional_Diffusion_Model(nn.Module):
         loss_x_mol_t0 = - 0.5 * scatter_add(torch.sum((epsilon_mol_x - epsilon_hat_mol_x)**2, dim=-1), molecule['idx'], dim=0)
 
         # TODO: if protein pocket not fixed add loss_x_protein_t0 computation
-        loss_x_protein_t0 = 0
+        loss_x_protein_t0 = torch.zeros(protein_pocket['size'].size(0))
 
         if self.features_fixed:
 
-            loss_h_t0 = 0
+            loss_h_t0 = torch.zeros(molecule['size'].size(0))
 
         else:
 

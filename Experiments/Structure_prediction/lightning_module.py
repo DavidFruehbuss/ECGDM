@@ -10,8 +10,6 @@ from Data.Ligand_data.dataset_ligand import ProcessedLigandPocketDataset
 from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
 from Models.diffusion_model import Conditional_Diffusion_Model
-# from Models.gflow_model import GFlow_Model
-
 from Models.architecture import NN_Model
 
 """
@@ -49,7 +47,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         torch.manual_seed(42)
 
         # choose the generative framework
-        frameworks = {'conditional_diffusion': Conditional_Diffusion_Model} # , 'generative_flow_network': GFlow_Model
+        frameworks = {'conditional_diffusion': Conditional_Diffusion_Model}
         assert generative_model in frameworks
 
         # choose the neural net architecture
@@ -65,6 +63,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.model = frameworks[generative_model](
             # framework parameters
             self.neural_net,
+            task_params.protein_pocket_fixed,
             task_params.features_fixed,
             generative_model_params.timesteps,
             dataset_params.num_atoms,
@@ -116,21 +115,18 @@ class Structure_Prediction_Model(pl.LightningModule):
                           num_workers=self.num_workers,
                           collate_fn=self.train_dataset.collate_fn,
                           pin_memory=True)
-        raise NotImplementedError
 
     def val_dataloader(self):
         return DataLoader(self.val_dataset, self.batch_size, shuffle=False,
                           num_workers=self.num_workers,
                           collate_fn=self.val_dataset.collate_fn,
                           pin_memory=True)
-        raise NotImplementedError
 
     def test_dataloader(self):
         return DataLoader(self.test_dataset, self.batch_size, shuffle=False,
                           num_workers=self.num_workers,
                           collate_fn=self.test_dataset.collate_fn,
                           pin_memory=True)
-        raise NotImplementedError
     
     def get_molecule_and_protein(self, data):
         '''
@@ -193,7 +189,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         self.log('val_loss', loss)
 
         for key, value in info.items():
-            val_key = key + 'val'
+            val_key = key + '_val'
             self.log(val_key, value)
 
     def configure_optimizers(self):
