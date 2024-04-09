@@ -56,6 +56,8 @@ if __name__ == "__main__":
 
     for i, mol_pro in enumerate(test_dataset):
 
+        print(mol_pro)
+
         # prepare peptide-MHC
         molecule, protein_pocket = mol_pro
         mol_pro_list = [(mol_pro) for i in range(num_samples)]
