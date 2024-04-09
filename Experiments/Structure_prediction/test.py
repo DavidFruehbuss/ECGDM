@@ -2,6 +2,7 @@ import argparse
 from argparse import Namespace
 from pathlib import Path
 import yaml
+import os
 
 import torch
 import pytorch_lightning as pl
@@ -29,6 +30,7 @@ for key, value in config.items():
         args_dict[key] = value
 
 num_samples = args.num_samples
+
 lightning_model = Structure_Prediction_Model(
                 args.dataset,
                 args.data_dir,
@@ -43,8 +45,12 @@ lightning_model = Structure_Prediction_Model(
                 args.num_workers,
                 args.device
     )
-
-lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
+if os.path.exists(args.checkpoint):
+    print('yes')
+    lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
+else:
+    print('no')
+    breakpoint
 lightning_model = lightning_model.to(device)
 
 test_dataset = lightning_model.test_dataset
