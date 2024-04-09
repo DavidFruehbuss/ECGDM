@@ -53,6 +53,8 @@ network_params:
   reflection_equivariant: False
 
 # Eval
+checkpoint: ''
+num_samples: 10
 
 
 
