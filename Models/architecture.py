@@ -19,6 +19,7 @@ class NN_Model(nn.Module):
             self,
             architecture: str,
             protein_pocket_fixed: bool,
+            features_fixed: bool,
             network_params,
             num_atoms: int,
             num_residues: int,
@@ -35,6 +36,7 @@ class NN_Model(nn.Module):
 
         self.architecture = architecture
         self.protein_pocket_fixed = protein_pocket_fixed
+        self.features_fixed = features_fixed
         self.x_dim = 3
         self.act_fn = nn.SiLU()
 
@@ -202,7 +204,7 @@ class NN_Model(nn.Module):
             graphs = [Data(x=h_split[i], pos=x_split[i]) for i in range(len(h_mol_split))]
             batched_graph = Batch.from_data_list(graphs)
             # add edge_index
-            # TODO: make sure that adding edge_index works like that
+            # TODO: make sure that adding edge_index works like that (might be wrong)
             batched_graph.edge_index = edges
 
             # (4) TODO: choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
@@ -292,8 +294,9 @@ class NN_Model(nn.Module):
         if torch.any(torch.isnan(displacement_vec)):
             raise ValueError("NaN detected in EGNN output")
         
-        # remove mean batch of the position (not sure why)
-        displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)[idx_joint]
+        # remove mean batch of the position only for joint
+        if self.protein_pocket_fixed:
+            displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)[idx_joint]
 
         # output
         epsilon_hat_mol = torch.cat((displacement_vec[:len(molecule_idx)], h_new_mol), dim=1)

@@ -13,6 +13,21 @@ from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+# read in config
+parser = argparse.ArgumentParser()
+parser.add_argument('--config', type=str, required=True)
+args = parser.parse_args()
+
+with open(args.config) as f:
+    config = yaml.safe_load(f)
+
+args_dict = args.__dict__
+for key, value in config.items():
+    if isinstance(value, dict):
+        args_dict[key] = Namespace(**value)
+    else:
+        args_dict[key] = value
+
 num_samples = args.num_samples
 
 lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
@@ -37,4 +52,6 @@ for i, mol_pro in enumerate(test_dataset):
     rmse = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
 
     results += [mol_pro, (xh_mol_final, xh_pro_final), rmse]
+
+print(results)
 

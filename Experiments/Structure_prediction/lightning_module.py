@@ -55,6 +55,7 @@ class Structure_Prediction_Model(pl.LightningModule):
             # model parameters
             architecture,
             task_params.protein_pocket_fixed,
+            task_params.features_fixed,
             network_params,
             dataset_params.num_atoms,
             dataset_params.num_residues,
