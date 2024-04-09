@@ -31,7 +31,7 @@ for key, value in config.items():
 
 num_samples = args.num_samples
 
-lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
+lightning_model = Structure_Prediction_Model.load_from_checkpoint(checkpoint_path=args.checkpoint)
 
 # lightning_model = Structure_Prediction_Model(
 #                 args.dataset,
