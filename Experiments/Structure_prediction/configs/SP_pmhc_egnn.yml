@@ -20,7 +20,7 @@ task_params:
 
 # Dataset
 dataset: 'pmhc'
-data_dir: '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
+data_dir: '/content/drive/MyDrive/pmhc' # '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
 dataset_params:
   num_atoms: 20 # obtained from constant file
   num_residues: 20
@@ -53,7 +53,7 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: 'content/MyDrive/PMHC_ckpt_1/last.ckpt'
+checkpoint: '/content/MyDrive/PMHC_ckpt_1/last.ckpt'
 num_samples: 10
 
 
