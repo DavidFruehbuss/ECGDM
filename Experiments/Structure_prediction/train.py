@@ -11,7 +11,7 @@ from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Pr
 
 if __name__ == "__main__":
 	
-	# desired_directory = '/gpfs/home4/dfruhbus/ECGDM/'
+	# desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
 	# os.chdir(desired_directory)
 	# sys.path.insert(0, desired_directory)
 	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model

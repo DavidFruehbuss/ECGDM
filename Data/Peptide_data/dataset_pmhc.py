@@ -19,7 +19,7 @@ from torch.utils.data import Dataset, random_split
 
 class Peptide_MHC_Dataset(Dataset):
      
-    def __init__(self, datadir, split='train', center=True, pickle_file=False):
+    def __init__(self, datadir, split='train', center=True, pickle_file=True):
 
         datadir_pickle = './Data/Peptide_data/pmhc_100K/'
 
@@ -81,7 +81,7 @@ class Peptide_MHC_Dataset(Dataset):
 
                     ## Adding positional AS_sequence information
                     node_names = graph['node_features']['_name']
-                    pos_in_seq = torch.tensor([int(re.findall(r'\b(\d+)\b', node_name)[-1]) for node_name in node_names])
+                    pos_in_seq = torch.tensor([int(re.findall(r'\b(\d+)\b', str(node_name))[-1]) for node_name in node_names])
 
                     # pos_in_seq = torch.zeros(len(features_peptide)) - 1
                     # edge_idx = torch.tensor(edge_idx)
