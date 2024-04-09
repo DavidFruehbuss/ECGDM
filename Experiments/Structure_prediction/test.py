@@ -31,26 +31,29 @@ for key, value in config.items():
 
 num_samples = args.num_samples
 
-lightning_model = Structure_Prediction_Model(
-                args.dataset,
-                args.data_dir,
-                args.dataset_params,
-                args.task_params,
-                args.generative_model,
-                args.generative_model_params,
-                args.architcture,
-                args.network_params,
-                args.batch_size,
-                args.lr,
-                args.num_workers,
-                args.device
-    )
-if os.path.exists(args.checkpoint):
-    print('yes')
-    lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
-else:
-    print('no')
-    breakpoint
+lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
+
+# lightning_model = Structure_Prediction_Model(
+#                 args.dataset,
+#                 args.data_dir,
+#                 args.dataset_params,
+#                 args.task_params,
+#                 args.generative_model,
+#                 args.generative_model_params,
+#                 args.architcture,
+#                 args.network_params,
+#                 args.batch_size,
+#                 args.lr,
+#                 args.num_workers,
+#                 args.device
+#     )
+# if os.path.exists(args.checkpoint):
+#     print('yes')
+#     lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
+# else:
+#     print('no')
+#     breakpoint
+
 lightning_model = lightning_model.to(device)
 
 test_dataset = lightning_model.test_dataset
