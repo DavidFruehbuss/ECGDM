@@ -48,7 +48,7 @@ lightning_model = Structure_Prediction_Model.load_from_checkpoint(
 )   
 
 lightning_model = lightning_model.to(device)
-
+lightning_model.setup('test')
 test_dataset = lightning_model.test_dataset
 
 results = []
