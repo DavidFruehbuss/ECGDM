@@ -8,6 +8,7 @@ import os
 import h5py
 import pickle
 from pathlib import Path
+import re
 
 import numpy as np
 import torch
@@ -41,7 +42,7 @@ class Peptide_MHC_Dataset(Dataset):
                 'protein_pocket_features': [],
                 'num_protein_pocket_residues': [],
                 'protein_pocket_idx': [],
-                'peptide_pos_in_seq': [],
+                'pos_in_seq': [],
             }
 
             for filename in os.listdir(datadir):
@@ -79,20 +80,23 @@ class Peptide_MHC_Dataset(Dataset):
                     edge_type = graph['edge_features']['covalent']
 
                     ## Adding positional AS_sequence information
-                    peptide_pos_in_seq = torch.zeros(len(features_peptide)) - 1
-                    edge_idx = torch.tensor(edge_idx)
-                    edge_idx_covalent = edge_idx[torch.tensor(edge_type, dtype=torch.bool)]
-                    unique, counts = torch.unique(torch.cat((edge_idx_covalent[:,0], edge_idx_covalent[:,1])), return_counts=True)
-                    possible_starts = counts == 1
-                    start = unique[possible_starts][0]
-                    chain = [start.item()]
-                    current = start
-                    while len(chain) != len(unique):
-                        next_aa = edge_idx_covalent[edge_idx_covalent[:,0] == current][:,1]
-                        chain += [next_aa.item()]
-                        current = next_aa
-                    for i, idx in enumerate(chain):
-                        peptide_pos_in_seq[idx] = i
+                    node_names = graph['node_features']['_name']
+                    pos_in_seq = torch.tensor([int(re.findall(r'\b(\d+)\b', node_name)[-1]) for node_name in node_names])
+
+                    # pos_in_seq = torch.zeros(len(features_peptide)) - 1
+                    # edge_idx = torch.tensor(edge_idx)
+                    # edge_idx_covalent = edge_idx[torch.tensor(edge_type, dtype=torch.bool)]
+                    # unique, counts = torch.unique(torch.cat((edge_idx_covalent[:,0], edge_idx_covalent[:,1])), return_counts=True)
+                    # possible_starts = counts == 1
+                    # start = unique[possible_starts][0]
+                    # chain = [start.item()]
+                    # current = start
+                    # while len(chain) != len(unique):
+                    #     next_aa = edge_idx_covalent[edge_idx_covalent[:,0] == current][:,1]
+                    #     chain += [next_aa.item()]
+                    #     current = next_aa
+                    # for i, idx in enumerate(chain):
+                    #     pos_in_seq[idx] = i
 
                     self.data['graph_name'].append([graph_name])
 
@@ -106,7 +110,7 @@ class Peptide_MHC_Dataset(Dataset):
                     self.data['num_protein_pocket_residues'].append(feature_length)
                     self.data['protein_pocket_idx'].append(torch.ones(len(position_protein_pocket)))
 
-                    self.data['peptide_pos_in_seq'].append(peptide_pos_in_seq)
+                    self.data['pos_in_seq'].append(pos_in_seq)
 
             if center:
                 for i in range(len(self.data['peptide_positions'])):
