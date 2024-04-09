@@ -33,18 +33,18 @@ num_samples = args.num_samples
 
 lightning_model = Structure_Prediction_Model.load_from_checkpoint(
                 args.checkpoint,
-                args.dataset,
-                args.data_dir,
-                args.dataset_params,
-                args.task_params,
-                args.generative_model,
-                args.generative_model_params,
-                args.architcture,
-                args.network_params,
-                args.batch_size,
-                args.lr,
-                args.num_workers,
-                args.device,
+                dataset=args.dataset,
+                data_dir=args.data_dir,
+                dataset_params=args.dataset_params,
+                task_params=args.task_params,
+                generative_model=args.generative_model,
+                generative_model_params=args.generative_model_params,
+                architcture=args.architcture,
+                network_params=args.network_params,
+                batch_size=args.batch_size,
+                lr=args.lr,
+                num_workers=args.num_workers,
+                device=args.device,
 )   
 
 lightning_model = lightning_model.to(device)
