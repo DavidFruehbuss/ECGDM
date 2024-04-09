@@ -30,7 +30,7 @@ generative_model: 'conditional_diffusion'
 generative_model_params:
   timesteps: 500
 
-architcture: 'ponita'
+architecture: 'ponita'
 network_params: 
   # general network parameters
   conditioned_on_time: True # modify to string
