@@ -29,7 +29,6 @@ for key, value in config.items():
         args_dict[key] = value
 
 num_samples = args.num_samples
-
 lightning_model = Structure_Prediction_Model(
                 args.dataset,
                 args.data_dir,
@@ -45,7 +44,7 @@ lightning_model = Structure_Prediction_Model(
                 args.device
     )
 
-lightning_model = lightning_model.load_from_checkpoint(args.checkpoint)
+lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
 lightning_model = lightning_model.to(device)
 
 test_dataset = lightning_model.test_dataset
