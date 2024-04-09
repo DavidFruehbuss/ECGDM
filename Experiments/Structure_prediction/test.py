@@ -29,7 +29,20 @@ for key, value in config.items():
         args_dict[key] = value
 
 num_samples = args.num_samples
-lightning_model = Structure_Prediction_Model()
+lightning_model = Structure_Prediction_Model(
+                args.dataset,
+                args.data_dir,
+                args.dataset_params,
+                args.task_params,
+                args.generative_model,
+                args.generative_model_params,
+                args.architcture,
+                args.network_params,
+                args.batch_size,
+                args.lr,
+                args.num_workers,
+                args.device
+    )
 
 lightning_model = Structure_Prediction_Model.load_from_checkpoint(args.checkpoint)
 lightning_model = lightning_model.to(device)
