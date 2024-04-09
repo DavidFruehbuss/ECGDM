@@ -18,7 +18,7 @@ from torch.utils.data import Dataset, random_split
 
 class Peptide_MHC_Dataset(Dataset):
      
-    def __init__(self, datadir, split='train', center=True, pickle_file=True):
+    def __init__(self, datadir, split='train', center=True, pickle_file=False):
 
         datadir_pickle = './Data/Peptide_data/pmhc_100K/'
 
@@ -41,6 +41,7 @@ class Peptide_MHC_Dataset(Dataset):
                 'protein_pocket_features': [],
                 'num_protein_pocket_residues': [],
                 'protein_pocket_idx': [],
+                'peptide_pos_in_seq': [],
             }
 
             for filename in os.listdir(datadir):
@@ -77,6 +78,22 @@ class Peptide_MHC_Dataset(Dataset):
                     # whether edge is a covalent bound or not
                     edge_type = graph['edge_features']['covalent']
 
+                    ## Adding positional AS_sequence information
+                    peptide_pos_in_seq = torch.zeros(len(features_peptide)) - 1
+                    edge_idx = torch.tensor(edge_idx)
+                    edge_idx_covalent = edge_idx[torch.tensor(edge_type, dtype=torch.bool)]
+                    unique, counts = torch.unique(torch.cat((edge_idx_covalent[:,0], edge_idx_covalent[:,1])), return_counts=True)
+                    possible_starts = counts == 1
+                    start = unique[possible_starts][0]
+                    chain = [start.item()]
+                    current = start
+                    while len(chain) != len(unique):
+                        next_aa = edge_idx_covalent[edge_idx_covalent[:,0] == current][:,1]
+                        chain += [next_aa.item()]
+                        current = next_aa
+                    for i, idx in enumerate(chain):
+                        peptide_pos_in_seq[idx] = i
+
                     self.data['graph_name'].append([graph_name])
 
                     self.data['peptide_positions'].append(torch.tensor(position_peptide))
@@ -88,6 +105,8 @@ class Peptide_MHC_Dataset(Dataset):
                     self.data['protein_pocket_features'].append(torch.tensor(features_protein_pocket))
                     self.data['num_protein_pocket_residues'].append(feature_length)
                     self.data['protein_pocket_idx'].append(torch.ones(len(position_protein_pocket)))
+
+                    self.data['peptide_pos_in_seq'].append(peptide_pos_in_seq)
 
             if center:
                 for i in range(len(self.data['peptide_positions'])):
