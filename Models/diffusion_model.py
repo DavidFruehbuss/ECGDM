@@ -506,7 +506,7 @@ class Conditional_Diffusion_Model(nn.Module):
             #     xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] + sampling_noise
 
             # time arrays
-            s_array = torch.fill((num_samples, 1), fill_value=s, device=device)
+            s_array = torch.full((num_samples, 1), fill_value=s, device=device)
             t_array = s_array + 1
             s_array_norm = s_array / self.T
             t_array_norm = t_array / self.T
