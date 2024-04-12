@@ -492,8 +492,8 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
         # project both pocket and peptide to 0 COM (only mol mean changes)
-        mean = scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)
-        xh_mol[:,:self.x_dim] = xh_mol_s[:,:self.x_dim] - mean[molecule['idx']]
+        mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
+        xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
         xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # Iterativly denoise stepwise for t = T,...,1
