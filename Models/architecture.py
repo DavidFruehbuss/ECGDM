@@ -225,9 +225,9 @@ class NN_Model(nn.Module):
             # 
             # TODO: retruns predicted noise x_new = [batch, 1, 3]
             # x_new = h_new[:,:self.x_dim]
-            displacement_vec = x_new.squeeze(1) # ([batch, 1, 3] - [batch, 3])
+            x_new = x_new.squeeze(1) # ([batch, 1, 3] - [batch, 3])
+            displacement_vec = (x_new - x_joint)
 
-            
         elif self.architecture == 'egnn' or self.architecture == 'gnn':
 
             # encode z_t_mol, z_t_pro (possible need to .clone() the inputs)
