@@ -56,6 +56,8 @@ if __name__ == "__main__":
 
     for i, mol_pro in enumerate(test_dataset):
 
+        if i > 10: continue
+
         # prepare peptide-MHC
         mol_pro_list = [mol_pro for i in range(num_samples)]
         mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
