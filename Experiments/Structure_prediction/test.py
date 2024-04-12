@@ -56,11 +56,9 @@ if __name__ == "__main__":
 
     for i, mol_pro in enumerate(test_dataset):
 
-        print(mol_pro)
-
         # prepare peptide-MHC
-        molecule, protein_pocket = mol_pro
-        mol_pro_list = [(mol_pro) for i in range(num_samples)]
+        molecule, protein_pocket = lightning_model.get_molecule_and_protein(mol_pro)
+        mol_pro_list = [(molecule, protein_pocket) for i in range(num_samples)]
         mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
 
         # sample new peptide-MHC structures using trained model
