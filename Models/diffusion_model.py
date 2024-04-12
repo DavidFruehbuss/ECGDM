@@ -499,6 +499,12 @@ class Conditional_Diffusion_Model(nn.Module):
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
 
+
+            # if self.sampling_with_noise:
+            #     sampling_noise = torch.randn(xh_mol[:,:self.x_dim])
+            #     # can modify this with alpha, sigma or guided noise
+            #     xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] + sampling_noise
+
             # time arrays
             s_array = torch.fill((num_samples, 1), fill_value=s, device=device)
             t_array = s_array + 1
