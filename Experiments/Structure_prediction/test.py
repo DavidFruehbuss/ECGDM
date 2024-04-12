@@ -63,7 +63,7 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        xh_mol_final, xh_pro_final = lightning_model.model.sample(mol_pro_batch)
+        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(mol_pro_batch)
 
         # Calculate the RMSE error
         rmse = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
