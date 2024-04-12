@@ -460,7 +460,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # replicate (molecule + protein_pocket) to have a batch of num_samples many replicates
         # do this step with Dataset function in lightning_modules
         device = molecule['x'].device
-        num_samples = molecule['size']
+        num_samples = len(molecule['size'])
 
         # Record protein_pocket center of mass before
         protein_pocket_com_before = scatter_mean(protein_pocket['x'], protein_pocket['idx'], dim=0)
