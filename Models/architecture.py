@@ -55,9 +55,10 @@ class NN_Model(nn.Module):
 
         if architecture == 'ponita':
 
-            self.atom_encoder = nn.Linear(num_atoms, self.joint_dim)
+            # here we can add positional encodings
+            self.mol_encoder = nn.Linear(num_atoms, self.joint_dim)
 
-            self.atom_decoder = nn.Linear(self.joint_dim, num_atoms)
+            self.mol_decoder = nn.Linear(self.joint_dim, num_atoms)
 
             self.residue_encoder = nn.Linear(num_residues, self.joint_dim)
 
@@ -99,13 +100,14 @@ class NN_Model(nn.Module):
             self.edge_embedding_dim = 0 if self.edge_embedding_dim is None else self.edge_embedding_dim
 
             # same encoder, decoders as in [Schneuing et al. 2023]
-            self.atom_encoder = nn.Sequential(
+            # here we can add positional encodings
+            self.mol_encoder = nn.Sequential(
                 nn.Linear(num_atoms, 2 * num_atoms),
                 self.act_fn,
                 nn.Linear(2 * num_atoms, self.joint_dim)
             )
 
-            self.atom_decoder = nn.Sequential(
+            self.mol_decoder = nn.Sequential(
                 nn.Linear(self.joint_dim, 2 * num_atoms),
                 self.act_fn,
                 nn.Linear(2 * num_atoms, num_atoms)
@@ -177,7 +179,7 @@ class NN_Model(nn.Module):
         if self.architecture == 'ponita':
 
             # (1) need z_t_mol and z_t_pro to be of the same size but no nonlinear embedding
-            h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:])
+            h_mol = self.mol_encoder(z_t_mol[:,self.x_dim:])
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
             # combine molecule and protein in joint space for displacment_vector calculation
             x_joint = torch.cat((z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim]), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
@@ -229,7 +231,7 @@ class NN_Model(nn.Module):
         elif self.architecture == 'egnn' or self.architecture == 'gnn':
 
             # encode z_t_mol, z_t_pro (possible need to .clone() the inputs)
-            h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:])
+            h_mol = self.mol_encoder(z_t_mol[:,self.x_dim:])
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
 
             # combine molecule and protein in joint space
@@ -287,7 +289,7 @@ class NN_Model(nn.Module):
             h_new = h_new[:, :-1]
                 
         # decode h_new
-        h_new_mol = self.atom_decoder(h_new[:len(molecule_idx)])
+        h_new_mol = self.mol_decoder(h_new[:len(molecule_idx)])
         h_new_pro = self.residue_decoder(h_new[len(molecule_idx):])
 
         # might not be necessary but let's see
