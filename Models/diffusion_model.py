@@ -528,7 +528,7 @@ class Conditional_Diffusion_Model(nn.Module):
             mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
             sigma_mol_s = sigma_t_given_s * sigma_s / sigma_t
             eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
-            xh_mol_s = mean_mol_s + sigma_mol_s * eps_lig_random
+            xh_mol_s = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_lig_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
             # project both pocket and peptide to 0 COM again (only mol mean changes)
@@ -548,7 +548,7 @@ class Conditional_Diffusion_Model(nn.Module):
         mean_mol_final = 1. / alpha_0[molecule['idx']] * (xh_mol - sigma_0[molecule['idx']] * epsilon_hat_mol_0)
         sigma_mol_final = sigma_0 / alpha_0 # not sure about this one
         eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
-        xh_mol_final = mean_mol_final + sigma_mol_final * eps_lig_random
+        xh_mol_final = mean_mol_final + sigma_mol_final[molecule['idx']] * eps_lig_random
         xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
         # project both pocket and peptide to 0 COM again (only mol mean changes)
