@@ -549,12 +549,12 @@ class Conditional_Diffusion_Model(nn.Module):
         sigma_mol_final = sigma_0 / alpha_0 # not sure about this one
         eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
         xh_mol_final = mean_mol_final + sigma_mol_final[molecule['idx']] * eps_lig_random
-        xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
+        xh_pro_final = xh_pro.detach().clone() # for safety (probally not necessary)
 
         # project both pocket and peptide to 0 COM again (only mol mean changes)
         mean = scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)
         xh_mol_final[:,:self.x_dim] = xh_mol_final[:,:self.x_dim] - mean[molecule['idx']]
-        xh_pro_final[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+        xh_pro_final[:,:self.x_dim] = xh_pro_final[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # Unnormalisation
         x_mol_final = xh_mol_final[:,:self.x_dim] * self.norm_values[0]
