@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     for i, mol_pro in enumerate(test_dataset):
 
-        if i > 1: continue
+        if i > 10: continue
 
         # prepare peptide-MHC
         mol_pro_list = [mol_pro for i in range(num_samples)]
