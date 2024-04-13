@@ -72,7 +72,7 @@ if __name__ == "__main__":
         # Normalize loss_t by graph size
         rmse = error_mol / ((3 + args.num_atoms) * molecule['size'])
 
-        results += [mol_pro, (xh_mol_final, xh_pro_final), rmse]
+        results += [rmse]
 
     print(results)
 
