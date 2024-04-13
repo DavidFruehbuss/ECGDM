@@ -68,7 +68,9 @@ if __name__ == "__main__":
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket)
 
         # Calculate the RMSE error
-        rmse = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # Normalize loss_t by graph size
+        rmse = error_mol / ((3 + args.num_atoms) * molecule['size'])
 
         results += [mol_pro, (xh_mol_final, xh_pro_final), rmse]
 
