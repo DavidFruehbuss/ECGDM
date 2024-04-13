@@ -459,8 +459,6 @@ class Conditional_Diffusion_Model(nn.Module):
         of the same pair, with the batch_size being the number of samples we want to generate.
         '''
 
-        self.sampling_with_noise = True
-
         if self.protein_pocket_fixed == False:
             # for this the sampling would change due to COM trick
             raise NotImplementedError
@@ -511,11 +509,6 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
-
-            if self.sampling_with_noise:
-                sampling_noise = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
-                # can modify this with alpha, sigma or guided noise
-                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] + sampling_noise
 
             if self.com_old:
                 # old centering approach
