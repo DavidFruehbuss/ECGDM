@@ -70,7 +70,7 @@ if __name__ == "__main__":
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         # Normalize loss_t by graph size
-        rmse = error_mol / ((3 + args.num_atoms) * molecule['size'])
+        rmse = error_mol / ((3 + args.dataset_params.num_atoms) * molecule['size'])
 
         results += [rmse]
 
