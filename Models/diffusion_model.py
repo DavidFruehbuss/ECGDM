@@ -173,11 +173,11 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-                # compute noised sample z_t
-                # for x cord. we mean center the normal noise for each graph
-                # modify to only diffuse position of the molecule
-                eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
-                eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
+            # compute noised sample z_t
+            # for x cord. we mean center the normal noise for each graph
+            # modify to only diffuse position of the molecule
+            eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
+            eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
             if self.com_old:
                 # old centering approach
@@ -459,6 +459,8 @@ class Conditional_Diffusion_Model(nn.Module):
         of the same pair, with the batch_size being the number of samples we want to generate.
         '''
 
+        self.sampling_with_noise = True
+
         if self.protein_pocket_fixed == False:
             # for this the sampling would change due to COM trick
             raise NotImplementedError
@@ -510,17 +512,17 @@ class Conditional_Diffusion_Model(nn.Module):
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
 
+            if self.sampling_with_noise:
+                sampling_noise = torch.randn(xh_mol[:,:self.x_dim])
+                # can modify this with alpha, sigma or guided noise
+                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] + sampling_noise
+
             if self.com_old:
                 # old centering approach
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
             else:
                 dumy_variable = 0
-
-            # if self.sampling_with_noise:
-            #     sampling_noise = torch.randn(xh_mol[:,:self.x_dim])
-            #     # can modify this with alpha, sigma or guided noise
-            #     xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] + sampling_noise
 
             # time arrays
             s_array = torch.full((num_samples, 1), fill_value=s, device=device)
