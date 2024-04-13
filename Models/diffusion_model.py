@@ -97,6 +97,8 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
+
+        self.com_old = True
         
     def forward(self, z_data):
 
@@ -161,25 +163,26 @@ class Conditional_Diffusion_Model(nn.Module):
 
         if self.protein_pocket_fixed:
 
-            # old centering approach
-            # xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-            # xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            if self.com_old:
+                # old centering approach
+                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            else:
+                # data is translated to 0, COM noise added and again translated to 0
+                mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
+                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
+                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-            # data is translated to 0, COM noise added and again translated to 0
-            mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
-            xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
-            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+                # compute noised sample z_t
+                # for x cord. we mean center the normal noise for each graph
+                # modify to only diffuse position of the molecule
+                eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
+                eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
-            # compute noised sample z_t
-            # for x cord. we mean center the normal noise for each graph
-            # modify to only diffuse position of the molecule
-            eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
-            eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
-
-
-            # old centering approach
-            # eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
-            # eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
+            if self.com_old:
+                # old centering approach
+                eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
+                eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
             if self.features_fixed:
 
@@ -200,10 +203,13 @@ class Conditional_Diffusion_Model(nn.Module):
             z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
             z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
 
-            # data is translated to 0, COM noise added and again translated to 0 (turn off for old centering approach)
-            mean = scatter_mean(z_t_mol[:,:self.x_dim], molecule['idx'], dim=0)
-            z_t_mol[:,:self.x_dim] = z_t_mol[:,:self.x_dim] - mean[molecule['idx']]
-            z_t_pro[:,:self.x_dim] = z_t_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+            if self.com_old:
+                dumy_variable = 0
+            else:
+                # data is translated to 0, COM noise added and again translated to 0 (turn off for old centering approach)
+                mean = scatter_mean(z_t_mol[:,:self.x_dim], molecule['idx'], dim=0)
+                z_t_mol[:,:self.x_dim] = z_t_mol[:,:self.x_dim] - mean[molecule['idx']]
+                z_t_pro[:,:self.x_dim] = z_t_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         else:
             # COM modification if protein_pocket not fixed
@@ -491,14 +497,25 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        # project both pocket and peptide to 0 COM (only mol mean changes)
-        mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
-        xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
-        xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+        if self.com_old:
+            # old centering approach
+            xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        else:
+            # data is translated to 0, COM noise added and again translated to 0
+            mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
+            xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
+            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
 
+            if self.com_old:
+                # old centering approach
+                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            else:
+                dumy_variable = 0
 
             # if self.sampling_with_noise:
             #     sampling_noise = torch.randn(xh_mol[:,:self.x_dim])
@@ -531,10 +548,13 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol_s = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_lig_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
-            # project both pocket and peptide to 0 COM again (only mol mean changes)
-            mean = scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)
-            xh_mol[:,:self.x_dim] = xh_mol_s[:,:self.x_dim] - mean[molecule['idx']]
-            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+            if self.com_old:
+                dumy_variable = 0
+            else:
+                # project both pocket and peptide to 0 COM again (only mol mean changes)
+                mean = scatter_mean(xh_mol_s[:,:self.x_dim], molecule['idx'], dim=0)
+                xh_mol[:,:self.x_dim] = xh_mol_s[:,:self.x_dim] - mean[molecule['idx']]
+                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
         t_0_array_norm = torch.zeros((num_samples, 1), device=device)
@@ -551,10 +571,13 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol_final = mean_mol_final + sigma_mol_final[molecule['idx']] * eps_lig_random
         xh_pro_final = xh_pro.detach().clone() # for safety (probally not necessary)
 
-        # project both pocket and peptide to 0 COM again (only mol mean changes)
-        mean = scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)
-        xh_mol_final[:,:self.x_dim] = xh_mol_final[:,:self.x_dim] - mean[molecule['idx']]
-        xh_pro_final[:,:self.x_dim] = xh_pro_final[:,:self.x_dim] - mean[protein_pocket['idx']]
+        if self.com_old:
+                dumy_variable = 0
+        else:
+            # project both pocket and peptide to 0 COM again (only mol mean changes)
+            mean = scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)
+            xh_mol_final[:,:self.x_dim] = xh_mol_final[:,:self.x_dim] - mean[molecule['idx']]
+            xh_pro_final[:,:self.x_dim] = xh_pro_final[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # Unnormalisation
         x_mol_final = xh_mol_final[:,:self.x_dim] * self.norm_values[0]
