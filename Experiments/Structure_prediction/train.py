@@ -40,7 +40,7 @@ if __name__ == "__main__":
                 args.task_params,
                 args.generative_model,
                 args.generative_model_params,
-                args.architcture,
+                args.architecture,
                 args.network_params,
                 args.batch_size,
                 args.lr,
