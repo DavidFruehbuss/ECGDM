@@ -7,6 +7,7 @@ import os
 import torch
 import pytorch_lightning as pl
 from torch_scatter import scatter_add
+import wandb
 
 from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
@@ -29,6 +30,8 @@ if __name__ == "__main__":
             args_dict[key] = Namespace(**value)
         else:
             args_dict[key] = value
+
+    wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
 
     num_samples = args.num_samples
 
@@ -65,7 +68,8 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket)
+        # TODO: Could pass wandb as input here to log the sampling progress
+        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, wandb, i)
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)

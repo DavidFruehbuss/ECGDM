@@ -451,6 +451,8 @@ class Conditional_Diffusion_Model(nn.Module):
             num_samples,
             molecule,
             protein_pocket,
+            wandb,
+            test_molecule,
         ):
         '''
         This function takes a molecule and a protein and return the most likely joint structure.
@@ -551,6 +553,11 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_mol[:,:self.x_dim] = xh_mol_s[:,:self.x_dim] - mean[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
+            # Log sampling progress
+            error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            wandb.log(f'RMSE {test_molecule}', rmse.mean(0))
+
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
         t_0_array_norm = torch.zeros((num_samples, 1), device=device)
         alpha_0 = self.noise_schedule(t_0_array_norm, 'alpha')
@@ -592,6 +599,11 @@ class Conditional_Diffusion_Model(nn.Module):
 
         xh_mol_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
         xh_pro_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[protein_pocket['idx']]
+
+        # Log sampling progress
+        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        wandb.log(rmse)
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
