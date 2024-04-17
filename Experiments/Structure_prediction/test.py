@@ -90,9 +90,9 @@ if __name__ == "__main__":
         saved_samples['x_target'] += [true_pos[:]]
         saved_samples['x_predicted'] += [xh_mol_final[:,:3]]
         saved_samples['h'] += [true_h[:]]
-        print(saved_samples['x_target'][0].shape)
-        print(saved_samples['x_predicted'][0].shape)
-        print(saved_samples['h'][0].shape)
+        print(len(saved_samples['x_target'][0]))
+        print(len(saved_samples['x_predicted'][0]))
+        print(len(saved_samples['h'][0].shape))
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
