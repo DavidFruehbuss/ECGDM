@@ -63,17 +63,19 @@ if __name__ == "__main__":
 
     results = []
     saved_samples = {}
-    saved_samples['x_target'] = []
-    saved_samples['x_predicted'] = []
-    saved_samples['h'] = []
-    saved_samples['rmse'] = []
-    saved_samples['rmse_mean'] = []
-    saved_samples['rmse_best'] = []
 
     for i in range(0, len(test_dataset[:1000]), sample_batch_size):
 
         if i > 0: continue
         start_time = time.time()
+
+        saved_samples['x_target'] = {}
+        saved_samples['x_predicted'] = {}
+        saved_samples['h'] = {}
+
+        saved_samples['rmse'] = []
+        saved_samples['rmse_mean'] = []
+        saved_samples['rmse_best'] = []
 
         # prepare peptide-MHC
         mol_pro_list = [test_dataset[i+j] for _ in range(num_samples) for j in range(sample_batch_size)]
@@ -85,14 +87,18 @@ if __name__ == "__main__":
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb)
 
         # Safe resulting structures
-        true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
-        true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
-        saved_samples['x_target'] += [[true_pos[:]]]
-        saved_samples['x_predicted'] += [xh_mol_final[:,:3]]
-        saved_samples['h'] += [[true_h[:]]]
-        print(len(saved_samples['x_target'])) # [num_nodes,3]
-        print(len(saved_samples['x_predicted'][0])) # [,290,3]
-        print(saved_samples['h'][0][0].shape)
+        true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
+        true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
+        for j in range(sample_batch_size):
+            key = i+j
+            saved_samples['x_target'][key] = true_pos
+            saved_samples['x_predicted'][key] = xh_mol_final[:,:3][molecule['idx']][j*num_samples:(j+1)*num_samples] # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3]
+            saved_samples['h'][key] = true_h
+        # Goal structure [3, ]
+        print(len(saved_samples['x_target'])) # 3
+        print(len(saved_samples['x_target'][0])) # num_nodes
+        print(len(saved_samples['x_predicted'])) # 3
+        print(len(saved_samples['x_predicted'][0])) # num_nodes
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
