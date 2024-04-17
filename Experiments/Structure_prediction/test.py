@@ -70,7 +70,7 @@ if __name__ == "__main__":
     saved_samples['rmse_mean'] = []
     saved_samples['rmse_best'] = []
 
-    for i in range(0, len(test_dataset), sample_batch_size):
+    for i in range(0, len(test_dataset[:1000]), sample_batch_size):
 
         if i > 0: continue
         start_time = time.time()
