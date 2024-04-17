@@ -68,7 +68,7 @@ if __name__ == "__main__":
 
     for i in range(0, len(test_dataset[:1000]), sample_batch_size):
 
-        if i > 0: continue
+        if i > 1: continue
         start_time = time.time()
 
         saved_samples['x_target'] = {}
