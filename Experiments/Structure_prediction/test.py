@@ -89,9 +89,7 @@ if __name__ == "__main__":
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb)
 
         # Safe resulting structures
-        print(molecule['x'].shape) # shape 290, 3
         size_tuple = tuple(molecule['size'].tolist())
-        print(torch.split(molecule['x'], size_tuple, dim=0))
         true_pos = [torch.split(molecule['x'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         true_h = [torch.split(molecule['h'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         for j in range(sample_batch_size):
@@ -100,11 +98,9 @@ if __name__ == "__main__":
             # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3] -> [sample_batch_size, samples, num_nodes, 3]
             saved_samples['x_predicted'][key] = torch.split(xh_mol_final[:,:3], size_tuple, dim=0)[j*num_samples:(j+1)*num_samples]
             saved_samples['h'][key] = true_h[j]
-        # Goal structure [...]
+        # Goal structure ['x_predicted']: [sample_key][10 * [9,3]], ['x_target']: [sample_key][1 * [9,3]]
         print(len(saved_samples['x_target'])) # 3
-        print(saved_samples['x_target'][0])
         print(len(saved_samples['x_predicted'])) # 3
-        print(saved_samples['x_predicted'])
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
@@ -122,8 +118,7 @@ if __name__ == "__main__":
 
         print(saved_samples['rmse'])
         print(saved_samples['rmse_best'])
-        
-        print([rmse, rmse_sample_mean, rmse_sample_best])
+
         print(f'Time: {end_time - start_time}')
 
     end_time_total = time.time()
