@@ -7,6 +7,9 @@ import time
 import pickle
 import gzip
 
+# import os
+# import sys
+
 import torch
 import pytorch_lightning as pl
 from torch_scatter import scatter_add
@@ -18,6 +21,12 @@ from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 if __name__ == "__main__":
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    # desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
+	# os.chdir(desired_directory)
+	# sys.path.insert(0, desired_directory)
+	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+    # from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
     # read in config
     parser = argparse.ArgumentParser()
@@ -68,7 +77,7 @@ if __name__ == "__main__":
 
     for i in range(0, len(test_dataset[:1000]), sample_batch_size):
 
-        if i > 1: continue
+        if i > 9: continue
         start_time = time.time()
 
         saved_samples['x_target'] = {}
@@ -124,8 +133,8 @@ if __name__ == "__main__":
     end_time_total = time.time()
     time_total = end_time_total - start_time_total
 
-    saved_samples['rmse_mean'] = torch.cat(saved_samples['rmse_mean'], dim=0)
-    saved_samples['rmse_best'] = torch.cat(saved_samples['rmse_best'], dim=0)
+    saved_samples['rmse_mean'] = torch.stack(saved_samples['rmse_mean'], dim=0)
+    saved_samples['rmse_best'] = torch.stack(saved_samples['rmse_best'], dim=0)
     rmse_mean = saved_samples['rmse_mean'].mean(0)
     rmse_best = saved_samples['rmse_best'].mean(0)
 
