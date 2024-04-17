@@ -98,7 +98,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
 
-        self.com_old = True
+        self.com_old = False
         
     def forward(self, z_data):
 

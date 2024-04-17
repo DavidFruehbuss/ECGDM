@@ -72,20 +72,18 @@ if __name__ == "__main__":
 
     results = []
     saved_samples = {}
+    saved_samples['x_target'] = {}
+    saved_samples['x_predicted'] = {}
+    saved_samples['h'] = {}
+    saved_samples['rmse'] = []
+    saved_samples['rmse_mean'] = []
+    saved_samples['rmse_best'] = []
 
     start_time_total = time.time()
 
-    for i in range(0, len(test_dataset[:1000]), sample_batch_size):
+    for i in range(0, 1000, sample_batch_size):
 
         start_time = time.time()
-
-        saved_samples['x_target'] = {}
-        saved_samples['x_predicted'] = {}
-        saved_samples['h'] = {}
-
-        saved_samples['rmse'] = []
-        saved_samples['rmse_mean'] = []
-        saved_samples['rmse_best'] = []
 
         # prepare peptide-MHC
         mol_pro_list = [test_dataset[i+j] for _ in range(num_samples) for j in range(sample_batch_size)]
@@ -135,7 +133,7 @@ if __name__ == "__main__":
     print(saved_samples['rmse_mean'])
     print(saved_samples['rmse_best'])
 
-    print(f'Mean RMSE across all mean/best sample: mean {round(rmse_mean,3)}, best {round(rmse_best,3)}')
+    print(f'Mean RMSE across all mean/best sample: mean {round(rmse_mean.item(),3)}, best {round(rmse_best.item(),3)}')
     print(f'This took {time_total} seconds for 1000*10 samples')
 
     # Serialize dictionary with pickle
