@@ -64,6 +64,8 @@ if __name__ == "__main__":
     results = []
     saved_samples = {}
 
+    start_time_total = time.time()
+
     for i in range(0, len(test_dataset[:1000]), sample_batch_size):
 
         if i > 0: continue
@@ -92,13 +94,14 @@ if __name__ == "__main__":
         for j in range(sample_batch_size):
             key = i+j
             saved_samples['x_target'][key] = true_pos
-            saved_samples['x_predicted'][key] = xh_mol_final[:,:3][molecule['idx']][j*num_samples:(j+1)*num_samples] # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3]
+            # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3] -> [sample_batch_size, samples, num_nodes, 3]
+            saved_samples['x_predicted'][key] = xh_mol_final[:,:3][molecule['idx']][j*num_samples:(j+1)*num_samples]
             saved_samples['h'][key] = true_h
-        # Goal structure [3, ]
+        # Goal structure [...]
         print(len(saved_samples['x_target'])) # 3
-        print(len(saved_samples['x_target'][0])) # num_nodes
+        print(saved_samples['x_target'][0].shape) # num_nodes (wrong)
         print(len(saved_samples['x_predicted'])) # 3
-        print(len(saved_samples['x_predicted'][0])) # num_nodes
+        print(saved_samples['x_predicted'][0][0].shape)
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
@@ -116,6 +119,10 @@ if __name__ == "__main__":
 
         print([rmse, rmse_sample_mean, rmse_sample_best])
         print(f'Time: {end_time - start_time}')
+
+    end_time_total = time.time()
+    time_total = end_time_total - start_time_total
+    print(f'This took {time_total} seconds for 1000*10 samples')
 
     # # Serialize dictionary with pickle
     # pickled_data = pickle.dumps(saved_samples)
