@@ -452,7 +452,6 @@ class Conditional_Diffusion_Model(nn.Module):
             molecule,
             protein_pocket,
             wandb,
-            test_molecule,
         ):
         '''
         This function takes a molecule and a protein and return the most likely joint structure.
@@ -603,7 +602,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Log sampling progress
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-        wandb.log(rmse)
+        # wandb.log(rmse)
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
