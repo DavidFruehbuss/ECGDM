@@ -87,9 +87,9 @@ if __name__ == "__main__":
         # Safe resulting structures
         true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
         true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
-        saved_samples['x_target'] += true_pos[:]
-        saved_samples['x_predicted'] += xh_mol_final[:,:3]
-        saved_samples['h'] += true_h[:]
+        saved_samples['x_target'] += [true_pos[:]]
+        saved_samples['x_predicted'] += [xh_mol_final[:,:3]]
+        saved_samples['h'] += [true_h[:]]
         print(saved_samples['x_target'][0].shape)
         print(saved_samples['x_predicted'][0].shape)
         print(saved_samples['h'][0].shape)
@@ -97,15 +97,16 @@ if __name__ == "__main__":
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         # Normalize loss_t by graph size
-        rmse = error_mol / ((3 + args.dataset_params.num_atoms) * molecule['size'])
+        mse = error_mol / ((3 + args.dataset_params.num_atoms) * molecule['size'])
+        rmse = torch.sqrt(mse)
         rmse_sample_mean = [rmse[j*num_samples:(j+1)*num_samples].mean(0) for j in range(sample_batch_size)]
-        rmse_sample_best = [rmse[j*num_samples:(j+1)*num_samples].min(0) for j in range(sample_batch_size)]
+        rmse_sample_best = [rmse[j*num_samples:(j+1)*num_samples].min(0)[0] for j in range(sample_batch_size)]
 
         end_time = time.time()
 
-        saved_samples['rmse'] += rmse
-        saved_samples['rmse_mean'] += rmse_sample_mean
-        saved_samples['rmse_best'] += rmse_sample_best
+        saved_samples['rmse'] += [rmse]
+        saved_samples['rmse_mean'] += [rmse_sample_mean]
+        saved_samples['rmse_best'] += [rmse_sample_best]
 
         print([rmse, rmse_sample_mean, rmse_sample_best])
         print(f'Time: {end_time - start_time}')
