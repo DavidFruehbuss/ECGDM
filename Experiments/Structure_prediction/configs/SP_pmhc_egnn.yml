@@ -55,6 +55,7 @@ network_params:
 # Eval
 checkpoint: '/content/drive/MyDrive/last.ckpt' 
 num_samples: 10
+sample_batch_size: 3
 
 
 

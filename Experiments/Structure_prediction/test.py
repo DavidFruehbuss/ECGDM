@@ -3,6 +3,7 @@ from argparse import Namespace
 from pathlib import Path
 import yaml
 import os
+import time
 
 import torch
 import pytorch_lightning as pl
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
 
     num_samples = args.num_samples
+    sample_batch_size = args.sample_batch_size
 
     lightning_model = Structure_Prediction_Model.load_from_checkpoint(
                     args.checkpoint,
@@ -56,27 +58,44 @@ if __name__ == "__main__":
     test_dataset = lightning_model.test_dataset
 
     results = []
+    saved_samples = {}
+    saved_samples['x_target'] = []
+    saved_samples['x_predicted'] = []
+    saved_samples['h'] = []
 
-    for i, mol_pro in enumerate(test_dataset):
+    for i in range(0, len(test_dataset), sample_batch_size):
 
-        if i > 10: continue
+        if i > 0: continue
+        start_time = time.time()
 
         # prepare peptide-MHC
-        mol_pro_list = [mol_pro for i in range(num_samples)]
+        mol_pro_list = [test_dataset[i+j] for _ in range(num_samples) for j in range(sample_batch_size)]
         mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
 
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        # TODO: Could pass wandb as input here to log the sampling progress
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, wandb, i)
+
+        # Safe resulting structures
+        true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
+        true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
+        saved_samples['x_target'] += true_pos[:]
+        saved_samples['x_predicted'] += xh_mol_final[:,:3]
+        saved_samples['h'] += true_h[:]
+        print(saved_samples['x_target'][0].shape)
+        print(saved_samples['x_predicted'][0].shape)
+        print(saved_samples['h'][0].shape)
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         # Normalize loss_t by graph size
         rmse = error_mol / ((3 + args.dataset_params.num_atoms) * molecule['size'])
+        rmse_sample_mean = [rmse[j*num_samples:(j+1)*num_samples].mean(0) for j in range(sample_batch_size)]
+        rmse_sample_best = [rmse[j*num_samples:(j+1)*num_samples].min(0) for j in range(sample_batch_size)]
 
-        results += [rmse]
+        end_time = time.time()
 
-    print(results)
+        print([rmse, rmse_sample_mean, rmse_sample_best])
+        print(f'Time: {end_time - start_time}')
 
