@@ -90,14 +90,15 @@ if __name__ == "__main__":
 
         # Safe resulting structures
         print(molecule['x'].shape) # shape 290, 3
-        print(torch.split(molecule['x'], molecule['size']).shape)
-        true_pos = [torch.split(molecule['x'], molecule['size'])[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
-        true_h = [torch.split(molecule['h'], molecule['size'])[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
+        size_tuple = tuple(map(tuple, molecule['size'].tolist()))
+        print(torch.split(molecule['x'], size_tuple, dim=0).shape)
+        true_pos = [torch.split(molecule['x'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
+        true_h = [torch.split(molecule['h'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         for j in range(sample_batch_size):
             key = i+j
             saved_samples['x_target'][key] = true_pos[j]
             # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3] -> [sample_batch_size, samples, num_nodes, 3]
-            saved_samples['x_predicted'][key] = torch.split(xh_mol_final[:,:3], molecule['size'])[j*num_samples:(j+1)*num_samples]
+            saved_samples['x_predicted'][key] = torch.split(xh_mol_final[:,:3], size_tuple, dim=0)[j*num_samples:(j+1)*num_samples]
             saved_samples['h'][key] = true_h[j]
         # Goal structure [...]
         print(len(saved_samples['x_target'])) # 3
