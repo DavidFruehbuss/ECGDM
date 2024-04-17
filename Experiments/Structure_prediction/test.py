@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
         # Safe resulting structures
         print(molecule['x'].shape) # shape 290, 3
-        size_tuple = tuple(map(tuple, molecule['size'].tolist()))
+        size_tuple = tuple(molecule['size'].tolist())
         print(torch.split(molecule['x'], size_tuple, dim=0).shape)
         true_pos = [torch.split(molecule['x'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         true_h = [torch.split(molecule['h'], size_tuple, dim=0)[i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
