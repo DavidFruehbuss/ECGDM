@@ -126,8 +126,10 @@ if __name__ == "__main__":
 
     saved_samples['rmse_mean'] = torch.cat(saved_samples['rmse_mean'], dim=0)
     saved_samples['rmse_best'] = torch.cat(saved_samples['rmse_best'], dim=0)
+    rmse_mean = saved_samples['rmse_mean'].mean(0)
+    rmse_best = saved_samples['rmse_best'].mean(0)
 
-    print(f'Mean RMSE across all mean/best sample: mean {saved_samples['rmse_mean'].mean(0)}, best {saved_samples['rmse_best'].mean(0)}')
+    print(f'Mean RMSE across all mean/best sample: mean {rmse_mean}, best {rmse_best}')
     print(f'This took {time_total} seconds for 1000*10 samples')
 
     # # Serialize dictionary with pickle
