@@ -4,6 +4,8 @@ from pathlib import Path
 import yaml
 import os
 import time
+import pickle
+import gzip
 
 import torch
 import pytorch_lightning as pl
@@ -32,10 +34,12 @@ if __name__ == "__main__":
         else:
             args_dict[key] = value
 
-    wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
+    # wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
+    _wandb = None
 
     num_samples = args.num_samples
     sample_batch_size = args.sample_batch_size
+    sample_savepath = args.sample_savepath
 
     lightning_model = Structure_Prediction_Model.load_from_checkpoint(
                     args.checkpoint,
@@ -62,6 +66,9 @@ if __name__ == "__main__":
     saved_samples['x_target'] = []
     saved_samples['x_predicted'] = []
     saved_samples['h'] = []
+    saved_samples['rmse'] = []
+    saved_samples['rmse_mean'] = []
+    saved_samples['rmse_best'] = []
 
     for i in range(0, len(test_dataset), sample_batch_size):
 
@@ -75,7 +82,7 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, wandb, i)
+        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb)
 
         # Safe resulting structures
         true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
@@ -96,6 +103,17 @@ if __name__ == "__main__":
 
         end_time = time.time()
 
+        saved_samples['rmse'] += rmse
+        saved_samples['rmse_mean'] += rmse_sample_mean
+        saved_samples['rmse_best'] += rmse_sample_best
+
         print([rmse, rmse_sample_mean, rmse_sample_best])
         print(f'Time: {end_time - start_time}')
+
+    # # Serialize dictionary with pickle
+    # pickled_data = pickle.dumps(saved_samples)
+
+    # # Compress pickled data
+    # with gzip.open(f'{sample_savepath}.pkl.gz', 'wb') as f:
+    #     f.write(pickled_data)
 
