@@ -89,14 +89,17 @@ if __name__ == "__main__":
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb)
 
         # Safe resulting structures
-        true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
+        print(molecule['x'].shape)
+        print(molecule['x'][molecule['idx']].shape)
+        print(xh_mol_final.shape)
+        true_pos = [molecule['x'][molecule['idx']][:,i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)] # [sample_batch_size, num_nodes, 3]
         for j in range(sample_batch_size):
             key = i+j
-            saved_samples['x_target'][key] = true_pos
+            saved_samples['x_target'][key] = true_pos[j]
             # [num_all_nodes, 3] -> [sample_batch_size * samples, num_nodes, 3] -> [sample_batch_size, samples, num_nodes, 3]
             saved_samples['x_predicted'][key] = xh_mol_final[:,:3][molecule['idx']][j*num_samples:(j+1)*num_samples]
-            saved_samples['h'][key] = true_h
+            saved_samples['h'][key] = true_h[j]
         # Goal structure [...]
         print(len(saved_samples['x_target'])) # 3
         print(saved_samples['x_target'][0])
@@ -113,10 +116,13 @@ if __name__ == "__main__":
 
         end_time = time.time()
 
-        saved_samples['rmse'] += [rmse]
-        saved_samples['rmse_mean'] += [rmse_sample_mean]
-        saved_samples['rmse_best'] += [rmse_sample_best]
+        saved_samples['rmse'] += [rmse[j*num_samples:(j+1)*num_samples] for j in range(sample_batch_size)]
+        saved_samples['rmse_mean'] += [rmse_sample_mean[j] for j in range(sample_batch_size)]
+        saved_samples['rmse_best'] += [rmse_sample_best[j] for j in range(sample_batch_size)]
 
+        print(saved_samples['rmse'])
+        print(saved_samples['rmse_best'])
+        
         print([rmse, rmse_sample_mean, rmse_sample_best])
         print(f'Time: {end_time - start_time}')
 
