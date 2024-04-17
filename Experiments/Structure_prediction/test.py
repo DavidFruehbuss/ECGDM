@@ -99,9 +99,9 @@ if __name__ == "__main__":
             saved_samples['h'][key] = true_h
         # Goal structure [...]
         print(len(saved_samples['x_target'])) # 3
-        print(saved_samples['x_target'][0].shape) # num_nodes (wrong)
+        print(saved_samples['x_target'][0])
         print(len(saved_samples['x_predicted'])) # 3
-        print(saved_samples['x_predicted'][0][0].shape)
+        print(saved_samples['x_predicted'])
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
