@@ -87,12 +87,12 @@ if __name__ == "__main__":
         # Safe resulting structures
         true_pos = [molecule['x'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
         true_h = [molecule['h'][molecule['idx']][i*num_samples] for i in range(sample_batch_size)]
-        saved_samples['x_target'] += [true_pos[:]]
+        saved_samples['x_target'] += [[true_pos[:]]]
         saved_samples['x_predicted'] += [xh_mol_final[:,:3]]
-        saved_samples['h'] += [true_h[:]]
-        print(len(saved_samples['x_target'][0]))
-        print(len(saved_samples['x_predicted'][0]))
-        print(len(saved_samples['h'][0]))
+        saved_samples['h'] += [[true_h[:]]]
+        print(len(saved_samples['x_target'])) # [num_nodes,3]
+        print(len(saved_samples['x_predicted'][0])) # [,290,3]
+        print(saved_samples['h'][0][0].shape)
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
