@@ -555,7 +555,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # Log sampling progress
             error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-            wandb.log(f'RMSE {test_molecule}', rmse.mean(0))
+            # wandb.log(f'RMSE {test_molecule}', rmse.mean(0))
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
         t_0_array_norm = torch.zeros((num_samples, 1), device=device)
