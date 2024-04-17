@@ -55,7 +55,7 @@ network_params:
 # Eval
 checkpoint: '/content/drive/MyDrive/last.ckpt' 
 num_samples: 10
-sample_batch_size: 3
+sample_batch_size: 10
 sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_3/samples/'
 
 
