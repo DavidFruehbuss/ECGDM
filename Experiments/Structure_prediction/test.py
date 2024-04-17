@@ -108,8 +108,6 @@ if __name__ == "__main__":
             saved_samples['x_predicted'][key] = torch.split(xh_mol_final[:,:3], size_tuple, dim=0)[j*num_samples:(j+1)*num_samples]
             saved_samples['h'][key] = true_h[j]
         # Goal structure ['x_predicted']: [sample_key][10 * [9,3]], ['x_target']: [sample_key][1 * [9,3]]
-        print(len(saved_samples['x_target'])) # 3
-        print(len(saved_samples['x_predicted'])) # 3
 
         # Calculate the RMSE error
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
@@ -125,9 +123,6 @@ if __name__ == "__main__":
         saved_samples['rmse_mean'] += [rmse_sample_mean[j] for j in range(sample_batch_size)]
         saved_samples['rmse_best'] += [rmse_sample_best[j] for j in range(sample_batch_size)]
 
-        print(saved_samples['rmse'])
-        print(saved_samples['rmse_best'])
-
         print(f'Time: {end_time - start_time}')
 
     end_time_total = time.time()
@@ -138,7 +133,10 @@ if __name__ == "__main__":
     rmse_mean = saved_samples['rmse_mean'].mean(0)
     rmse_best = saved_samples['rmse_best'].mean(0)
 
-    print(f'Mean RMSE across all mean/best sample: mean {rmse_mean}, best {rmse_best}')
+    print(saved_samples['rmse_mean'])
+    print(saved_samples['rmse_best'])
+
+    print(f'Mean RMSE across all mean/best sample: mean {round(rmse_mean,3)}, best {round(rmse_best,3)}')
     print(f'This took {time_total} seconds for 1000*10 samples')
 
     # # Serialize dictionary with pickle
