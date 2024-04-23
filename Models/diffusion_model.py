@@ -658,4 +658,6 @@ class Conditional_Diffusion_Model(nn.Module):
         ax.set_title('After')
         ax.legend()
 
+        plt.show()
+
         return sampled_structures
