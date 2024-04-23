@@ -88,6 +88,8 @@ if __name__ == "__main__":
 
     for i in range(0, 1000, sample_batch_size):
 
+        if i > 0: continue
+
         start_time = time.time()
 
         # prepare peptide-MHC
