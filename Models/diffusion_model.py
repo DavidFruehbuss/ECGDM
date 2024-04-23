@@ -498,7 +498,7 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_s[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         print(rmse.mean(0))
 
