@@ -28,6 +28,11 @@ if __name__ == "__main__":
 	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
     # from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
+    seed = 42
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
     # read in config
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
