@@ -2,6 +2,9 @@ import torch
 import numpy as np
 import math
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_scatter import scatter_add, scatter_mean
@@ -500,7 +503,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-        print(rmse.mean(0))
+        print(f'The starting RSME of random noise it {rmse.mean(0)}')
 
         if self.com_old:
             # old centering approach
@@ -511,6 +514,25 @@ class Conditional_Diffusion_Model(nn.Module):
             mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+
+        # visualisation (1)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        # Plot the first point cloud
+        ax.scatter(xh_mol[:, 0], xh_mol[:, 1], xh_mol[:, 2], color='red', label='Peptide')
+
+        # Plot the second point cloud
+        ax.scatter(xh_pro[:, 0], xh_pro[:, 1], xh_pro[:, 2], color='blue', label='Pocket')
+
+        # Adding labels and title
+        ax.set_xlabel('X Coordinate')
+        ax.set_ylabel('Y Coordinate')
+        ax.set_zlabel('Z Coordinate')
+        ax.set_title('Before')
+        ax.legend()
+
+
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
@@ -618,5 +640,22 @@ class Conditional_Diffusion_Model(nn.Module):
         # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         sampled_structures = (xh_mol_final, xh_pro_final)
+
+        # visualisation (1)
+        fig = plt.figure()
+        ax = fig.add_subplot(112, projection='3d')
+
+        # Plot the first point cloud
+        ax.scatter(xh_mol_final[:, 0], xh_mol_final[:, 1], xh_mol_final[:, 2], color='red', label='Peptide')
+
+        # Plot the second point cloud
+        ax.scatter(xh_pro[:, 0], xh_pro[:, 1], xh_pro[:, 2], color='blue', label='Pocket')
+
+        # Adding labels and title
+        ax.set_xlabel('X Coordinate')
+        ax.set_ylabel('Y Coordinate')
+        ax.set_zlabel('Z Coordinate')
+        ax.set_title('After')
+        ax.legend()
 
         return sampled_structures
