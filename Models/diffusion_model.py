@@ -477,7 +477,11 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Presteps
 
-        # If we want a new peptide we would have to add random sampling of the start peptide here
+        # If we want a new peptide we would have to add random sampling of the start peptide here^
+
+        # define the target (sampling debugging)
+        mol_target = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+        mol_target = mol_target - protein_pocket_com_before
 
         # Normalisation
         # molecule['x'] = molecule['x'] / self.norm_values[0]
@@ -501,7 +505,7 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         print(f'The starting RSME of random noise it {rmse.mean(0)}')
 
@@ -577,7 +581,7 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
             # Log sampling progress
-            error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
