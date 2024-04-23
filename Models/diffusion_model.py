@@ -98,7 +98,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
 
-        self.com_old = False
+        self.com_old = True
         
     def forward(self, z_data):
 
@@ -596,11 +596,18 @@ class Conditional_Diffusion_Model(nn.Module):
         # Correct for center of mass difference
         protein_pocket_com_after = scatter_mean(x_pro_final, protein_pocket['idx'], dim=0)
 
+        # Testing if we only learn the form
+        # Moving mol targets COM to 0
+        mol_target = molecule['x']  - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+
         xh_mol_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
         xh_pro_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[protein_pocket['idx']]
 
+        # Moving mol targets COM to original COM
+        mol_target += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
+
         # Log sampling progress
-        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         # wandb.log(rmse)
 
