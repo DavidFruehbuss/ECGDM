@@ -481,7 +481,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # define the target (sampling debugging)
         mol_target = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
-        mol_target = mol_target - protein_pocket_com_before
+        mol_target = mol_target - protein_pocket_com_before[molecule['idx']]
 
         # Normalisation
         # molecule['x'] = molecule['x'] / self.norm_values[0]
