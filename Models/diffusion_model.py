@@ -553,7 +553,7 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
             # Log sampling progress
-            error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_s[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
