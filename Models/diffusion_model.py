@@ -520,10 +520,10 @@ class Conditional_Diffusion_Model(nn.Module):
         ax = fig.add_subplot(111, projection='3d')
 
         # Plot the first point cloud
-        ax.scatter(xh_mol[:, 0], xh_mol[:, 1], xh_mol[:, 2], color='red', label='Peptide')
+        ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
 
         # Plot the second point cloud
-        ax.scatter(xh_pro[:, 0], xh_pro[:, 1], xh_pro[:, 2], color='blue', label='Pocket')
+        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
 
         # Adding labels and title
         ax.set_xlabel('X Coordinate')
@@ -646,10 +646,10 @@ class Conditional_Diffusion_Model(nn.Module):
         ax = fig.add_subplot(112, projection='3d')
 
         # Plot the first point cloud
-        ax.scatter(xh_mol_final[:, 0], xh_mol_final[:, 1], xh_mol_final[:, 2], color='red', label='Peptide')
+        ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
 
         # Plot the second point cloud
-        ax.scatter(xh_pro[:, 0], xh_pro[:, 1], xh_pro[:, 2], color='blue', label='Pocket')
+        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
 
         # Adding labels and title
         ax.set_xlabel('X Coordinate')

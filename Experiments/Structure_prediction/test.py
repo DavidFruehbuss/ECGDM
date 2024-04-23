@@ -48,9 +48,8 @@ if __name__ == "__main__":
         else:
             args_dict[key] = value
 
-    # wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
-    _wandb = wandb.init(project='Sampling_PMHC_progress', entity=args.entity, name=args.run_name,)
-
+    # wandb.init(project='Sampling_PMHC_progress', entity=args.entity, name=args.run_name,)
+    _wandb = None
     num_samples = args.num_samples
     sample_batch_size = args.sample_batch_size
     sample_savepath = args.sample_savepath
