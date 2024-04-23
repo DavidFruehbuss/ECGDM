@@ -516,8 +516,8 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
         # visualisation (1)
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
+        fig1 = plt.figure(1)
+        ax = fig1.add_subplot(111, projection='3d')
 
         # Plot the first point cloud
         ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
@@ -642,8 +642,8 @@ class Conditional_Diffusion_Model(nn.Module):
         sampled_structures = (xh_mol_final, xh_pro_final)
 
         # visualisation (1)
-        fig = plt.figure()
-        ax = fig.add_subplot(112, projection='3d')
+        fig2 = plt.figure(2)
+        ax = fig2.add_subplot(111, projection='3d')
 
         # Plot the first point cloud
         ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
