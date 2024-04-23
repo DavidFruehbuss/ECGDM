@@ -498,6 +498,10 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
+        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_s[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        print(rmse.mean(0))
+
         if self.com_old:
             # old centering approach
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
