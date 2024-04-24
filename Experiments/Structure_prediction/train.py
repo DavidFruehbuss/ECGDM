@@ -6,6 +6,7 @@ import yaml
 # import os
 # import sys
 
+import torch
 import pytorch_lightning as pl
 from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 
