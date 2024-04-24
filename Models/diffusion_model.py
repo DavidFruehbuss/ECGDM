@@ -107,14 +107,33 @@ class Conditional_Diffusion_Model(nn.Module):
 
         molecule, protein_pocket = z_data
 
+        # computing the target
+        mol_target = molecule['x']
+        if self.com_old:
+            # old centering approach
+            mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
         # use neural network to predict noise
         epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'])
 
+        # compute alpha, sigma
+        alpha_t = self.noise_schedule(t, 'alpha')
+        sigma_t = self.noise_schedule(t, 'sigma')
+
         # compute denoised sample
-        # z_data_hat = (1 / alpha_t) * z_t - (sigma_t / alpha_t) * epsilon_hat
+        # original equation
+        z_data_hat = (1 / alpha_t) * z_t_mol - (sigma_t / alpha_t) * epsilon_hat_mol
+
+        # above is revers of this equation
+        # z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
+
+        # Log sampling progress TODO:1
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        print(rmse)
 
         if self.training:
 
