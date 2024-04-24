@@ -125,7 +125,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # compute denoised sample
         # original equation
-        z_data_hat = (1 / alpha_t) * z_t_mol - (sigma_t / alpha_t) * epsilon_hat_mol
+        z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
 
         # above is revers of this equation
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
