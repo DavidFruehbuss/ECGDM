@@ -1,6 +1,6 @@
 # Logging
 logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_3/'
-project: 'Structur_prediction'
+project: 'Structur_prediction_D1'
 run_name: 'SP_pmhc_egnn_3'
 entity: 'neuro-ai-scientist'
 
