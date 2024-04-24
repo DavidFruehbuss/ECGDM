@@ -133,7 +133,6 @@ class Conditional_Diffusion_Model(nn.Module):
         # Log sampling progress TODO:1
         error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-        print(rmse)
 
         if self.training:
 
@@ -146,6 +145,8 @@ class Conditional_Diffusion_Model(nn.Module):
             loss, info = self.validation_loss(z_data, molecule, z_t_mol, epsilon_mol, 
                                          epsilon_hat_mol,protein_pocket, 
                                          z_t_pro, epsilon_pro, epsilon_hat_pro, t)
+            
+        info['rmse'] = rmse.mean(0)
 
         return loss.mean(0), info
 
