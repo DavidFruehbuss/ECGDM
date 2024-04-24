@@ -17,10 +17,10 @@ if __name__ == "__main__":
 	# sys.path.insert(0, desired_directory)
 	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 
-    seed = 42
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    # seed = 42
+    # torch.manual_seed(seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
 
     # read in config
     parser = argparse.ArgumentParser()
