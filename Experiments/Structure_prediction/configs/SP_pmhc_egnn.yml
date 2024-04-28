@@ -1,7 +1,7 @@
 # Logging
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_3/'
-project: 'Structur_prediction_D1'
-run_name: 'SP_pmhc_egnn_3'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_data/'
+project: 'Structur_prediction_dataset'
+run_name: 'SP_pmhc_egnn_data'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -53,10 +53,10 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: '/content/drive/MyDrive/last.ckpt' # './Experiments/Structure_prediction/Logs/PMHC_egnn_1/checkpoints/last.ckpt' 
+checkpoint: '/content/drive/MyDrive/last.ckpt' # './Experiments/Structure_prediction/Logs/pmhc_egnn_3/checkpoints/best-model-epoch=epoch=25-v1.ckpt' 
 num_samples: 10
-sample_batch_size: 1 # 10
-sample_savepath: './Experiments/Structure_prediction/Logs/PMHC_egnn_1/samples'
+sample_batch_size: 10 # 10
+sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_3/samples_fixed'
 
 
 

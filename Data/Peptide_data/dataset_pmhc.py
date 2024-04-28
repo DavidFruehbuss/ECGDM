@@ -84,6 +84,7 @@ class Peptide_MHC_Dataset(Dataset):
                     ## Adding positional AS_sequence information
                     node_names = graph['node_features']['_name']
                     pos_in_seq = torch.tensor([int(re.findall(r'\b(\d+)\b', str(node_name))[-1]) for node_name in node_names])
+                    pos_in_seq_peptide = pos_in_seq[chain_ids_peptide]
 
                     # pos_in_seq = torch.zeros(len(features_peptide)) - 1
                     # edge_idx = torch.tensor(edge_idx)
@@ -112,7 +113,7 @@ class Peptide_MHC_Dataset(Dataset):
                     self.data['num_protein_pocket_residues'].append(feature_length)
                     self.data['protein_pocket_idx'].append(torch.ones(len(position_protein_pocket)))
 
-                    self.data['pos_in_seq'].append(pos_in_seq)
+                    self.data['pos_in_seq'].append(pos_in_seq_peptide)
 
             if center:
                 for i in range(len(self.data['peptide_positions'])):

@@ -142,10 +142,10 @@ if __name__ == "__main__":
     print(f'Mean RMSE across all mean/best sample: mean {round(rmse_mean.item(),3)}, best {round(rmse_best.item(),3)}')
     print(f'This took {time_total} seconds for 1000*10 samples')
 
-    # # Serialize dictionary with pickle
-    # pickled_data = pickle.dumps(saved_samples)
+    # Serialize dictionary with pickle
+    pickled_data = pickle.dumps(saved_samples)
 
-    # # Compress pickled data
-    # with gzip.open(f'{sample_savepath}.pkl.gz', 'wb') as f:
-    #     f.write(pickled_data)
+    # Compress pickled data
+    with gzip.open(f'{sample_savepath}.pkl.gz', 'wb') as f:
+        f.write(pickled_data)
 
