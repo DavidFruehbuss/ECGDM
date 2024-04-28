@@ -141,6 +141,7 @@ class Structure_Prediction_Model(pl.LightningModule):
                 'h': data['peptide_features'].to(self.device, FLOAT_TYPE),
                 'size': data['num_peptide_residues'].to(self.device, INT_TYPE),
                 'idx': data['peptide_idx'].to(self.device, INT_TYPE),
+                'pos_in_seq': data['pos_in_seq'].to(self.device, INT_TYPE),
             }
 
             protein_pocket = {

@@ -106,6 +106,7 @@ class Conditional_Diffusion_Model(nn.Module):
     def forward(self, z_data):
 
         molecule, protein_pocket = z_data
+        molecule_pos = molecule['pos_in_seq']
 
         # computing the target
         mol_target = molecule['x']
@@ -117,7 +118,7 @@ class Conditional_Diffusion_Model(nn.Module):
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
         # use neural network to predict noise
-        epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'])
+        epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
         # compute alpha, sigma
         alpha_t = self.noise_schedule(t, 'alpha')
@@ -223,8 +224,9 @@ class Conditional_Diffusion_Model(nn.Module):
             # compute noised representations
             # alpha_t: [16,1] -> [300,13] or [333,23] by indexing and broadcasting
             # TODO: alpha value confuses me, doesn't this change the size of the complex
-            z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
-            z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro - sigma_t[protein_pocket['idx']] * epsilon_pro
+            # TODO:1 - instead of + ????
+            z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
+            z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro + sigma_t[protein_pocket['idx']] * epsilon_pro
 
             if self.com_old:
                 dumy_variable = 0
@@ -305,6 +307,7 @@ class Conditional_Diffusion_Model(nn.Module):
             t,
     ):
         ### Additional evaluation (VLB) variables
+        molecule_pos = molecule['pos_in_seq']
 
         # compute the sum squared error loss per graph
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
@@ -334,7 +337,7 @@ class Conditional_Diffusion_Model(nn.Module):
         z_0_mol, z_0_pro, epsilon_0_mol, epsilon_0_pro, t_0 = self.noise_process(z_data, t_is_0 = True)
 
         # use neural network to predict noise for t = 0
-        epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'])
+        epsilon_hat_0_mol, epsilon_hat_0_pro = self.neural_net(z_0_mol, z_0_pro, t_0, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
         loss_x_mol_t0, loss_x_protein_t0, loss_h_t0 = self.loss_t0(
             molecule, z_0_mol, epsilon_0_mol, epsilon_hat_0_mol,
@@ -490,6 +493,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # replicate (molecule + protein_pocket) to have a batch of num_samples many replicates
         # do this step with Dataset function in lightning_modules
         device = molecule['x'].device
+        molecule_pos = molecule['pos_in_seq']
         num_samples = len(molecule['size'])
 
         # Record protein_pocket center of mass before
@@ -583,12 +587,13 @@ class Conditional_Diffusion_Model(nn.Module):
             sigma2_t_given_s = sigma_t_given_s**2
 
             # use neural network to predict noise
-            epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'])
+            epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
             # compute p(z_s|z_t) using epsilon and alpha_s_given_t, sigma_s_given_t to predict mean and std of z_s
             mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
             sigma_mol_s = sigma_t_given_s * sigma_s / sigma_t
             eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+            # the line bellow is where we would add the gaudi guidance (-> compute backbone and statistical potentials)
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_lig_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
@@ -612,7 +617,7 @@ class Conditional_Diffusion_Model(nn.Module):
         sigma_0 = self.noise_schedule(t_0_array_norm, 'sigma')
 
         # use neural network to predict noise
-        epsilon_hat_mol_0, _ = self.neural_net(xh_mol, xh_pro, t_0_array_norm, molecule['idx'], protein_pocket['idx'])
+        epsilon_hat_mol_0, _ = self.neural_net(xh_mol, xh_pro, t_0_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
         # compute p(x|z_0) using epsilon and alpha_0, sigma_0 to predict mean and std of x
         mean_mol_final = 1. / alpha_0[molecule['idx']] * (xh_mol - sigma_0[molecule['idx']] * epsilon_hat_mol_0)
