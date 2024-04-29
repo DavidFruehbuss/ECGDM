@@ -503,9 +503,12 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # If we want a new peptide we would have to add random sampling of the start peptide here^
 
-        # define the target (sampling debugging)
-        mol_target = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
-        mol_target = mol_target - protein_pocket_com_before[molecule['idx']]
+        # define the target at the pocket position
+        mol_target_p = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+        mol_target_p = mol_target_p + protein_pocket_com_before[molecule['idx']]
+
+        # define the target at 0-COM
+        mol_target_0 = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
 
         # Normalisation
         # molecule['x'] = molecule['x'] / self.norm_values[0]
@@ -529,9 +532,9 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-        print(f'The starting RSME of random noise it {rmse.mean(0)}')
+        print(f'The starting RSME of random noise is {rmse.mean(0)}')
 
         if self.com_old:
             # old centering approach
@@ -543,32 +546,29 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-        # # visualisation (1)
-        # fig1 = plt.figure(1)
-        # ax = fig1.add_subplot(111, projection='3d')
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
 
-        # # Plot the first point cloud
-        # ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
+        # visualisation (1)
+        fig1 = plt.figure(1)
+        ax = fig1.add_subplot(111, projection='3d')
 
-        # # Plot the second point cloud
-        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
+        # Plot the first point cloud
+        ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
 
-        # # Adding labels and title
-        # ax.set_xlabel('X Coordinate')
-        # ax.set_ylabel('Y Coordinate')
-        # ax.set_zlabel('Z Coordinate')
-        # ax.set_title('Before')
-        # ax.legend()
+        # Plot the second point cloud
+        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
+
+        # Adding labels and title
+        ax.set_xlabel('X Coordinate')
+        ax.set_ylabel('Y Coordinate')
+        ax.set_zlabel('Z Coordinate')
+        ax.set_title('Before')
+        ax.legend()
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
-
-            if self.com_old:
-                # old centering approach
-                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
-            else:
-                dumy_variable = 0
 
             # time arrays
             s_array = torch.full((num_samples, 1), fill_value=s, device=device)
@@ -589,12 +589,20 @@ class Conditional_Diffusion_Model(nn.Module):
             # use neural network to predict noise
             epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
+            # extra check
+            z_data_hat = (1 / alpha_t)[molecule['idx']] * xh_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+            z_data_hat[:,:self.x_dim] = z_data_hat[:,:self.x_dim] - scatter_mean(z_data_hat[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+            error_mol_check = scatter_add(torch.sqrt(torch.sum((mol_target_0 - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            rmse_check = error_mol_check / ((3 + self.num_atoms) * molecule['size'])
+            print(f'Direct denoising gives {rmse_check.mean(0)}')
+
             # compute p(z_s|z_t) using epsilon and alpha_s_given_t, sigma_s_given_t to predict mean and std of z_s
             mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
             sigma_mol_s = sigma_t_given_s * sigma_s / sigma_t
-            eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+            eps_mol_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+            eps_mol_random = eps_mol_random - scatter_mean(eps_mol_random, molecule['idx'], dim=0)[molecule['idx']]
             # the line bellow is where we would add the gaudi guidance (-> compute backbone and statistical potentials)
-            xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_lig_random
+            xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
             if self.com_old:
@@ -605,8 +613,15 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
+            if self.com_old:
+                # old centering approach
+                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            else:
+                dumy_variable = 0
+
             # Log sampling progress
-            error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
@@ -663,28 +678,28 @@ class Conditional_Diffusion_Model(nn.Module):
         # Log sampling progress
         error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-        print(rmse.mean(0))
+        print(f'Final RSME: {rmse.mean(0)}')
         # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
-        # # visualisation (1)
-        # fig2 = plt.figure(2)
-        # ax = fig2.add_subplot(111, projection='3d')
+        # visualisation (1)
+        fig2 = plt.figure(2)
+        ax = fig2.add_subplot(111, projection='3d')
 
-        # # Plot the first point cloud
-        # ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
+        # Plot the first point cloud
+        ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
 
-        # # Plot the second point cloud
-        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
+        # Plot the second point cloud
+        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
 
-        # # Adding labels and title
-        # ax.set_xlabel('X Coordinate')
-        # ax.set_ylabel('Y Coordinate')
-        # ax.set_zlabel('Z Coordinate')
-        # ax.set_title('After')
-        # ax.legend()
+        # Adding labels and title
+        ax.set_xlabel('X Coordinate')
+        ax.set_ylabel('Y Coordinate')
+        ax.set_zlabel('Z Coordinate')
+        ax.set_title('After')
+        ax.legend()
 
-        # plt.show()
+        plt.show()
 
         return sampled_structures
