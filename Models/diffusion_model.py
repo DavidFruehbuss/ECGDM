@@ -263,7 +263,7 @@ class Conditional_Diffusion_Model(nn.Module):
         kl_prior = self.kl_prior(molecule)
 
         # Add a SNR modulation term to upweight highly noised samples
-        SNR_t = (1 - self.SNR_t(t).squeeze(1))
+        SNR_t = (1 / self.SNR_t(t).squeeze(1))
 
         # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
         t_0_mask = (t == 0).float().squeeze()
@@ -284,7 +284,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Normalize loss_t by graph size
         error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
         error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
-        loss_t = 0.5 * (error_mol + error_pro) # * SNR_t
+        loss_t = 0.5 * (error_mol + error_pro) * SNR_t
 
         # Normalize loss_0 by graph size
         loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])

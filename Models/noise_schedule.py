@@ -8,7 +8,7 @@ class Noise_Schedule(nn.Module):
     This is precomputed as a lookup table to save time
     '''
 
-    def __init__(self, num_timesteps, offset=1.0e-5, noise_schedule='linear'):
+    def __init__(self, num_timesteps, offset=1.0e-5, noise_schedule='polynomial'):
         super().__init__()
         self.T = num_timesteps
 
