@@ -21,13 +21,13 @@ class Peptide_MHC_Dataset(Dataset):
      
     def __init__(self, datadir, split='train', center=True, pickle_file=True):
 
-        # datadir_pickle = './Data/Peptide_data/pmhc_100K/'
-        datadir_pickle = datadir
+        datadir_pickle = './Data/Peptide_data/pmhc_100K/'
+        # datadir_pickle = datadir
 
         if pickle_file:
 
-            # datadir_pickle = './Data/Peptide_data/pmhc_100K/'
-            datadir_pickle = datadir
+            datadir_pickle = './Data/Peptide_data/pmhc_100K/'
+            # datadir_pickle = datadir
 
             with open(Path(datadir_pickle, 'dataset_pmhc.pkl'), 'rb') as f:
                 self.data = pickle.load(f)

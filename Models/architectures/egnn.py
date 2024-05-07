@@ -191,7 +191,7 @@ class EquivariantBlock(nn.Module):
 class EGNN(nn.Module):
     def __init__(self, in_node_nf, in_edge_nf, hidden_nf, device='cpu', act_fn=nn.SiLU(), n_layers=3, attention=False,
                  norm_diff=True, out_node_nf=None, tanh=False, coords_range=15, norm_constant=1, inv_sublayers=2,
-                 sin_embedding=False, normalization_factor=100, aggregation_method='sum', reflection_equiv=True):
+                 sin_embedding=False, normalization_factor=100, aggregation_method='sum', reflection_equiv=True, edge_sin_attr=False):
         super(EGNN, self).__init__()
         if out_node_nf is None:
             out_node_nf = in_node_nf
@@ -203,6 +203,7 @@ class EGNN(nn.Module):
         self.normalization_factor = normalization_factor
         self.aggregation_method = aggregation_method
         self.reflection_equiv = reflection_equiv
+        # self.edge_sin_attr = edge_sin_attr
 
         if sin_embedding:
             self.sin_embedding = SinusoidsEmbeddingNew()
@@ -210,8 +211,23 @@ class EGNN(nn.Module):
         else:
             self.sin_embedding = None
             edge_feat_nf = 2
-
+        
         edge_feat_nf = edge_feat_nf + in_edge_nf
+
+        #############################################
+        # Siem's edge encoding
+        # if sin_embedding:
+        #     self.sin_embedding = SinusoidsEmbeddingNew()
+        # else:
+        #     self.sin_embedding = None
+
+        # if edge_sin_attr and sin_embedding:
+        #     edge_feat_nf = in_edge_nf + self.sin_embedding.dim
+        # elif edge_sin_attr:
+        #     edge_feat_nf = in_edge_nf + 1
+        # else:
+        #     edge_feat_nf = 2
+        #############################################
 
         self.embedding = nn.Linear(in_node_nf, self.hidden_nf)
         self.embedding_out = nn.Linear(self.hidden_nf, out_node_nf)

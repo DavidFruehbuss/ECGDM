@@ -48,7 +48,8 @@ class NN_Model(nn.Module):
 
         # positional encoding
         self.position_encoding = True
-        self.pE_dim = 10
+        self.pE_dim = 20
+        # self.edge_sin_attr = True
 
         # edge parameters
         self.edge_embedding_dim = network_params.edge_embedding_dim
@@ -134,7 +135,7 @@ class NN_Model(nn.Module):
                 self.joint_dim += 1
 
             if self.position_encoding:
-                self.joint_dim += 10 # 10 pE dims
+                self.joint_dim += self.pE_dim # 10 pE dims
 
             if architecture == 'egnn':
 
@@ -145,7 +146,7 @@ class NN_Model(nn.Module):
                                  inv_sublayers=network_params.inv_sublayers, sin_embedding=network_params.sin_embedding,
                                  normalization_factor=network_params.normalization_factor,
                                  aggregation_method=network_params.aggregation_method,
-                                 reflection_equiv=network_params.reflection_equivariant)
+                                 reflection_equiv=network_params.reflection_equivariant) # edge_sin_attr=self.edge_sin_attrs
 
             else:
                 
@@ -244,7 +245,7 @@ class NN_Model(nn.Module):
 
             # position_encoding
             if self.position_encoding:
-                pE = sin_pE(molecule_pos, molecule_idx, self.pE_dim)              
+                pE = sin_pE(molecule_pos, self.pE_dim)              
                 h_mol = torch.cat([h_mol, pE], dim=1)
                 h_pro = torch.cat([h_pro, torch.zeros((h_pro.shape[0], self.pE_dim), device=h_pro.device)], dim=1)
 
@@ -269,6 +270,25 @@ class NN_Model(nn.Module):
             else:
                 edge_types = None
 
+            #######################################################################
+            # positional edge features (Siem)
+            # if self.edge_sin_attr:
+            #     edge_attr = torch.zeros(edges.shape[1], h_mol.shape[1]).to(self.device)
+            #     edges_atoms = self.get_edges_molecules(molecule_idx)
+            #     edge_diff = edges_atoms[0] - edges_atoms[1]
+            #     atom_edge_attr = self.sin_pE(edge_diff, self.pE_dim)
+
+            #     _, sizes = torch.unique(edges_atoms[0], return_counts=True)
+            #     atom_nodes = edges_atoms[0].unique()
+            #     atom_starts = torch.searchsorted(edges[0], atom_nodes)
+            #     atom_index = torch.repeat_interleave(atom_starts, sizes)
+
+            #     atom_index = atom_index + torch.concatenate(
+            #         [torch.arange(s).to(self.device) for s in sizes]
+            #     )
+            #     edge_attr[atom_index] = atom_edge_attr
+            #######################################################################
+
             if self.architecture == 'egnn':
 
                 # choose whether to get protein_pocket corrdinates fixed
@@ -278,7 +298,7 @@ class NN_Model(nn.Module):
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
                                             update_coords_mask=protein_pocket_fixed,
-                                            batch_mask=idx_joint, edge_attr=edge_types)
+                                            batch_mask=idx_joint, edge_attr=edge_types) # edge_attr=edge_attr
                 
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
@@ -324,6 +344,17 @@ class NN_Model(nn.Module):
         epsilon_hat_pro = torch.cat((displacement_vec[len(molecule_idx):], h_new_pro), dim=1)
 
         return epsilon_hat_mol, epsilon_hat_pro
+    
+    def get_edges_molecules(self, batch_mask_ligand): 
+        '''
+        returns peptide edges only
+        first line is a very smart trick to get the maximum edge_index (not my trick)
+        ''' 
+        adj_ligand = batch_mask_ligand[:, None] == batch_mask_ligand[None, :]
+
+        edges = torch.stack(torch.where(adj_ligand), dim=0)
+
+        return edges
     
     def get_edges(self, batch_mask_ligand, batch_mask_pocket, x_ligand, x_pocket): 
         '''

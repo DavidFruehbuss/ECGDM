@@ -28,7 +28,7 @@ dataset_params:
 
 generative_model: 'conditional_diffusion'
 generative_model_params:
-  timesteps: 500
+  timesteps: 1000
 
 architecture: 'egnn'
 network_params: 
@@ -47,7 +47,7 @@ network_params:
   tanh: True
   norm_constant: 1
   inv_sublayers: 1
-  sin_embedding: False
+  sin_embedding: True
   normalization_factor: 100
   aggregation_method: 'sum'
   reflection_equivariant: False

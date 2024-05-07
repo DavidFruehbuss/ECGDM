@@ -2,7 +2,7 @@ import torch
 
 import torch
 
-def sin_pE(node_indices, batch_indices, num_features=10):
+def sin_pE(node_indices, num_features=10):
     """
     Compute sinusoidal node features for positional encoding of graph nodes in a batch,
     given node indices as relative positions within each graph and a batch index tensor 
