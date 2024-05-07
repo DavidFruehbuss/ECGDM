@@ -226,7 +226,9 @@ class Conditional_Diffusion_Model(nn.Module):
             # TODO: alpha value confuses me, doesn't this change the size of the complex
             # TODO:1 - instead of + ????
             z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
-            z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro + sigma_t[protein_pocket['idx']] * epsilon_pro
+            # TODO: massive change [alternative is to update pocket in sampling as well]
+            z_t_pro = xh_pro
+            # z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro + sigma_t[protein_pocket['idx']] * epsilon_pro
 
             if self.com_old:
                 dumy_variable = 0
@@ -257,8 +259,11 @@ class Conditional_Diffusion_Model(nn.Module):
         else:
             error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
-        # TODO: add KL_prior loss (neglebile)
-        kl_prior = 0
+        # TODO: add KL_prior loss (neglebile) <------ might be not neglebile after all
+        kl_prior = self.kl_prior(molecule)
+
+        # Add a SNR modulation term to upweight highly noised samples
+        SNR_t = (1 - self.SNR_t(t).squeeze(1))
 
         # t = 0 and t != 0 masks for seperate computation of log p(x | z0)
         t_0_mask = (t == 0).float().squeeze()
@@ -279,7 +284,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Normalize loss_t by graph size
         error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
         error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
-        loss_t = 0.5 * (error_mol + error_pro)
+        loss_t = 0.5 * (error_mol + error_pro) # * SNR_t
 
         # Normalize loss_0 by graph size
         loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
@@ -296,7 +301,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
             'loss_x_protein_t0': loss_x_protein_t0.mean(0),
             'loss_h_t0': loss_h_t0.mean(0),
-            'kl_prior': kl_prior,
+            'kl_prior': kl_prior.mean(0),
         }
 
         return loss, info
@@ -318,7 +323,7 @@ class Conditional_Diffusion_Model(nn.Module):
             error_pro = scatter_add(torch.sum((epsilon_pro - epsilon_hat_pro)**2, dim=-1), protein_pocket['idx'], dim=0)
 
         # TODO: add KL_prior loss (neglebile)
-        kl_prior = 0
+        kl_prior = self.kl_prior(molecule)
 
         # if pocket not fixed then molecule['size'] + protein_pocket['size']
         neg_log_const = self.neg_log_const(molecule['size'], molecule['size'].size(0), device=molecule['x'].device)
@@ -365,7 +370,7 @@ class Conditional_Diffusion_Model(nn.Module):
             'loss_x_mol_t0': loss_x_mol_t0.mean(0),
             'loss_x_protein_t0': loss_x_protein_t0.mean(0),
             'loss_h_t0': loss_h_t0.mean(0),
-            'kl_prior': kl_prior,
+            'kl_prior': kl_prior.mean(0),
             'neg_log_const': neg_log_const.mean(0),
             'delta_log_px': delta_log_px.mean(0),
             'log_pN': log_pN,
@@ -430,6 +435,41 @@ class Conditional_Diffusion_Model(nn.Module):
         
         return loss_x_mol_t0, loss_x_protein_t0, loss_h_t0
     
+    def kl_prior(self, molecule):
+
+        device=molecule['x'].device
+
+        molecule['x'] = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+
+        T_normalized = torch.ones((len(molecule['size']), 1), device=device)
+        alpha_T = self.noise_schedule(T_normalized, 'alpha')
+        sigma_T = self.noise_schedule(T_normalized, 'sigma')
+        sigma_T_value = sigma_T[0,0].item()
+
+        mu_x_mol = molecule['x'] * alpha_T[molecule['idx']] # [:,3]
+        mu_h_mol = molecule['h'] * alpha_T[molecule['idx']] # [:,20]
+
+        sigma_T_x = torch.full(alpha_T.shape, fill_value=sigma_T_value, device=device).squeeze() # [64,1]
+        sigma_T_h = torch.full(alpha_T.shape, fill_value=sigma_T_value, device=device).squeeze() # [64,1]
+
+        # KL computation h
+        kl_h = 0
+        # zeros = torch.zeros_like(mu_h_mol)
+        # ones = torch.ones_like(sigma_T_h)
+        # mu_norm2 = scatter_add(torch.sum((mu_h_mol - zeros) ** 2, dim=1), molecule['idx'], dim=0)
+        # kl_h = torch.log(ones / sigma_T_h) + 0.5 * (sigma_T_h**2 + mu_norm2) / (ones**2) - 0.5
+
+        # KL computation x
+        zeros = torch.zeros_like(mu_x_mol)
+        ones = torch.ones_like(sigma_T_x)
+        mu_norm2 = scatter_add(torch.sum((mu_x_mol - zeros) ** 2, dim=-1), molecule['idx'], dim=0)
+        d = (molecule['size'] - 1) * self.x_dim
+        kl_x = d * torch.log(ones / sigma_T_x) + 0.5 * (d * sigma_T_x**2 + mu_norm2) / (ones**2) - 0.5 * d
+
+        kl_loss = kl_x + kl_h
+
+        return kl_loss
+    
     def delta_log_px(self, num_nodes):
 
         delta_log_px = - (num_nodes - 1) * self.x_dim * np.log(self.norm_values[0])
@@ -470,6 +510,19 @@ class Conditional_Diffusion_Model(nn.Module):
         SNR_s_t = (alpha2_s / alpha2_t) / (sigma2_s / sigma2_t)
 
         return SNR_s_t
+    
+    def SNR_t(self, t):
+
+        '''
+        computes the SNR between t and 0
+        '''
+
+        alpha2_t = self.noise_schedule(t, 'alpha')**2
+        sigma2_t = self.noise_schedule(t, 'sigma')**2
+
+        SNR_t = alpha2_t / sigma2_t
+
+        return SNR_t
     
     @torch.no_grad()
     def sample_structure(
@@ -526,6 +579,7 @@ class Conditional_Diffusion_Model(nn.Module):
             molecule_h = molecule['h']
         else:
             # for this starting h and updating would change
+            print('Shouldnt be reached')
             molecule_h = torch.zeros((protein_pocket['h'].size), device=device)
 
         # combine position and features
@@ -550,22 +604,88 @@ class Conditional_Diffusion_Model(nn.Module):
         rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
 
-        # visualisation (1)
-        fig1 = plt.figure(1)
-        ax = fig1.add_subplot(111, projection='3d')
+        # # visualisation (1)
+        # fig1 = plt.figure(1)
+        # ax = fig1.add_subplot(111, projection='3d')
 
-        # Plot the first point cloud
-        ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
+        # # Plot the first point cloud
+        # ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
 
-        # Plot the second point cloud
-        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
+        # # Plot the second point cloud
+        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
 
-        # Adding labels and title
-        ax.set_xlabel('X Coordinate')
-        ax.set_ylabel('Y Coordinate')
-        ax.set_zlabel('Z Coordinate')
-        ax.set_title('Before')
-        ax.legend()
+        # # Adding labels and title
+        # ax.set_xlabel('X Coordinate')
+        # ax.set_ylabel('Y Coordinate')
+        # ax.set_zlabel('Z Coordinate')
+        # ax.set_title('Before')
+        # ax.legend()
+
+        ##################
+
+        # print(molecule['idx'])
+        # print(molecule['idx'].shape)
+        # print(molecule['size'])
+
+        # # Sanaty check
+        molecule_xx = molecule['x']
+        molecule_xx[:,:self.x_dim] = molecule_xx[:,:self.x_dim] - scatter_mean(molecule_xx[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        xh_t_mol = torch.cat((molecule_xx, molecule_h), dim=1)
+        z_t_pro = xh_pro
+
+        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        print(f'Sanity check 1 (self): {rmse.mean(0)}')
+
+        eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
+
+        if self.com_old:
+            # old centering approach
+            eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
+
+        if self.features_fixed:
+            eps_h_mol = torch.zeros(size=(len(xh_mol), self.num_atoms), device=device)
+
+        epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
+
+        for ts in [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]:
+
+            t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
+            # normalize t
+            t_array = t_array / self.T
+            alpha_t = self.noise_schedule(t_array, 'alpha')
+            sigma_t = self.noise_schedule(t_array, 'sigma')
+
+            z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
+
+            # use neural network to predict noise
+            epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t_array, molecule['idx'], protein_pocket['idx'], molecule_pos)
+
+            # compute denoised sample
+            # original equation
+            z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+            z_data_hat_2 = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_mol
+
+            # expanend_fraction = (sigma_t / alpha_t)[molecule['idx']]
+            # print(f'sigma {sigma_t.shape}')
+            # print(f'alpha {alpha_t.shape}')
+            # print(f'sigma/alpha {(sigma_t / alpha_t).shape}')
+            # print(f'alpha[mol_idx] {expanend_fraction.shape}')
+
+
+            error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
+
+            error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
+
+        ##################
+        # Sanity Check with 500 steps from 500 noised sample
+        # xh_mol = z_t_mol
+        ##################
+
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
@@ -590,11 +710,11 @@ class Conditional_Diffusion_Model(nn.Module):
             epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
             # extra check
-            z_data_hat = (1 / alpha_t)[molecule['idx']] * xh_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
-            z_data_hat[:,:self.x_dim] = z_data_hat[:,:self.x_dim] - scatter_mean(z_data_hat[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-            error_mol_check = scatter_add(torch.sqrt(torch.sum((mol_target_0 - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            rmse_check = error_mol_check / ((3 + self.num_atoms) * molecule['size'])
-            print(f'Direct denoising gives {rmse_check.mean(0)}')
+            # z_data_hat = (1 / alpha_t)[molecule['idx']] * xh_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+            # z_data_hat[:,:self.x_dim] = z_data_hat[:,:self.x_dim] - scatter_mean(z_data_hat[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+            # error_mol_check = scatter_add(torch.sqrt(torch.sum((mol_target_0 - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            # rmse_check = error_mol_check / ((3 + self.num_atoms) * molecule['size'])
+            # print(f'Direct denoising gives {rmse_check.mean(0)}')
 
             # compute p(z_s|z_t) using epsilon and alpha_s_given_t, sigma_s_given_t to predict mean and std of z_s
             mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
@@ -683,23 +803,23 @@ class Conditional_Diffusion_Model(nn.Module):
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
-        # visualisation (1)
-        fig2 = plt.figure(2)
-        ax = fig2.add_subplot(111, projection='3d')
+        # # visualisation (1)
+        # fig2 = plt.figure(2)
+        # ax = fig2.add_subplot(111, projection='3d')
 
-        # Plot the first point cloud
-        ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
+        # # Plot the first point cloud
+        # ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
 
-        # Plot the second point cloud
-        ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
+        # # Plot the second point cloud
+        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
 
-        # Adding labels and title
-        ax.set_xlabel('X Coordinate')
-        ax.set_ylabel('Y Coordinate')
-        ax.set_zlabel('Z Coordinate')
-        ax.set_title('After')
-        ax.legend()
+        # # Adding labels and title
+        # ax.set_xlabel('X Coordinate')
+        # ax.set_ylabel('Y Coordinate')
+        # ax.set_zlabel('Z Coordinate')
+        # ax.set_title('After')
+        # ax.legend()
 
-        plt.show()
+        # plt.show()
 
         return sampled_structures

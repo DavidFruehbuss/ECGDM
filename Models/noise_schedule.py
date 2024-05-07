@@ -8,15 +8,18 @@ class Noise_Schedule(nn.Module):
     This is precomputed as a lookup table to save time
     '''
 
-    def __init__(self, num_timesteps, offset=1.0e-5, noise_schedule='polynomial'):
+    def __init__(self, num_timesteps, offset=1.0e-5, noise_schedule='linear'):
         super().__init__()
         self.T = num_timesteps
 
-        if noise_schedule != 'polynomial':
+        if noise_schedule == 'polynomial':    
+            x = np.linspace(0, num_timesteps + 1, num_timesteps + 1)
+            alpha2 = (1 - (x/num_timesteps)**2)**2
+        elif noise_schedule == 'linear':
+            x = np.linspace(0, num_timesteps + 1, num_timesteps + 1)
+            alpha2 = (1 - (x/num_timesteps)**1)**2
+        else:
             raise NotImplementedError
-
-        x = np.linspace(0, num_timesteps + 1, num_timesteps + 1)
-        alpha2 = (1 - (x/num_timesteps)**2)**2
 
         # for numerical stability and offset for avoiding problems with t = 0
         alpha2 = self.clip_noise_schedule(alpha2)
