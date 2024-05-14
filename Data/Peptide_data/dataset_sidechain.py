@@ -18,13 +18,13 @@ from Bio.Align import PairwiseAligner
 from Bio import SeqIO
 from Bio.PDB.Polypeptide import is_aa, one_to_three
 
-from openfold.np.residue_constants import restype_atom37_mask, restype_atom14_mask, chi_angles_mask, restypes
-from openfold.data.data_transforms import (atom37_to_frames,
+from openfold.openfold.np.residue_constants import restype_atom37_mask, restype_atom14_mask, chi_angles_mask, restypes
+from openfold.openfold.data.data_transforms import (atom37_to_frames,
                                            atom37_to_torsion_angles,
                                            get_backbone_frames,
                                            make_atom14_masks,
                                            make_atom14_positions)
-from openfold.utils.feats import atom14_to_atom37
+from openfold.openfold.utils.feats import atom14_to_atom37
 
 def _read_residue_data(residues: List[Residue]) -> Dict[str, torch.Tensor]:
     """
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     pdb_parser = PDBParser()
     pdb_dir = '/projects/0/einf2380/data/pMHCI/db2_selected_models/BA/'
     out_file_name = './Data/Peptide_data/sidechain_100K.hdf5'
-    for file_path in glob('/projects/0/einf2380/data/pMHCI/db2_selected_models/BA/*/*/pdb/*.pdb')
+    for file_path in glob('/projects/0/einf2380/data/pMHCI/db2_selected_models/BA/*/*/pdb/*.pdb'):
 
         structure_object = pdb_parser.get_structure(id, file_path)
         structure_model = structure_object.get_models()[0]

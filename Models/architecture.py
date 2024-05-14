@@ -245,7 +245,8 @@ class NN_Model(nn.Module):
 
             # position_encoding
             if self.position_encoding:
-                pE = sin_pE(molecule_pos, self.pE_dim)              
+                # TODO: molecule_pos[molecule_idx] not correct !!!
+                pE = sin_pE(molecule_pos, self.pE_dim)
                 h_mol = torch.cat([h_mol, pE], dim=1)
                 h_pro = torch.cat([h_pro, torch.zeros((h_pro.shape[0], self.pE_dim), device=h_pro.device)], dim=1)
 

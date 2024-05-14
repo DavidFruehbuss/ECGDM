@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from torch_scatter import scatter_add, scatter_mean
 
 from Models.noise_schedule import Noise_Schedule
+from Data.Peptide_data.utils import create_new_pdb
 
 """
 This file implements the generative framework [diffusion model] for the model
@@ -170,7 +171,24 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # sample t ~ U(0,...,T) for each graph individually
         t_low = 0 if self.train else 1
+
         t = torch.randint(t_low, self.T + 1, size=(batch_size, 1), device=device)
+
+        # high_noise_training_schedule
+        self.high_noise_training_schedule = True
+        if self.high_noise_training_schedule:
+            split_point = int(0.8 * self.T)
+            t = torch.empty((batch_size, 1), device=device)
+            for i in range(batch_size):
+                rnd = torch.rand(1, device=device)
+                if rnd > 0.5:
+                    # Sample from the lower segment (t_low to 80% of T)
+                    t[i] = torch.randint(t_low, split_point + 1, (1,), device=device)
+                else:
+                    # Sample from the upper segment (80% of T to T)
+                    t[i] = torch.randint(split_point + 1, self.T + 1, (1,), device=device)
+
+
         # normalize t
         t = t / self.T
 
@@ -284,7 +302,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Normalize loss_t by graph size
         error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
         error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
-        loss_t = 0.5 * (error_mol + error_pro) * SNR_t
+        loss_t = 0.5 * (error_mol + error_pro) # * SNR_t
 
         # Normalize loss_0 by graph size
         loss_x_mol_t0 = loss_x_mol_t0 / (self.x_dim * molecule['size'])
@@ -531,6 +549,7 @@ class Conditional_Diffusion_Model(nn.Module):
             molecule,
             protein_pocket,
             wandb,
+            run_id,
         ):
         '''
         This function takes a molecule and a protein and return the most likely joint structure.
@@ -743,7 +762,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # Log sampling progress
             error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-            print(rmse.mean(0))
+            # print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
@@ -802,6 +821,29 @@ class Conditional_Diffusion_Model(nn.Module):
         # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         sampled_structures = (xh_mol_final, xh_pro_final)
+
+        #######################################
+        ## Creating new pdb files
+
+        for i in range(len(molecule['size'])):
+            # (1) extract the peptide position
+            pos = xh_mol_final[:,:3]
+            peptide_pos = pos[molecule['idx'] == i]
+            # (2) bring peptides into correct order
+            print(molecule['pos_in_seq'])
+            peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
+            peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+            # (3) get graph name for elemnt in batch
+            graph_name = molecule['graph_name'][i]
+
+            print(peptide_idx)
+            print(peptide_pos_orderd.shape)
+            print(graph_name)
+
+            # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
+            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id)
+
+        #######################################
 
         # # visualisation (1)
         # fig2 = plt.figure(2)

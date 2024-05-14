@@ -85,6 +85,9 @@ class Peptide_MHC_Dataset(Dataset):
                     node_names = graph['node_features']['_name']
                     pos_in_seq = torch.tensor([int(re.findall(r'\b(\d+)\b', str(node_name))[-1]) for node_name in node_names])
                     pos_in_seq_peptide = pos_in_seq[chain_ids_peptide]
+                    if len(pos_in_seq_peptide) > torch.sum(chain_ids_peptide):
+                        print(torch.sum(chain_ids_peptide))
+                        raise ValueError
 
                     # pos_in_seq = torch.zeros(len(features_peptide)) - 1
                     # edge_idx = torch.tensor(edge_idx)
