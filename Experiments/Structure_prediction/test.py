@@ -6,32 +6,28 @@ import os
 import time
 import pickle
 import gzip
+import glob
 
-# import os
-# import sys
+import os
+import sys
 
 import torch
 import pytorch_lightning as pl
 from torch_scatter import scatter_add
 import wandb
 
-from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
-from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
+# from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+# from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
 if __name__ == "__main__":
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    # desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
-	# os.chdir(desired_directory)
-	# sys.path.insert(0, desired_directory)
-	# from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
-    # from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
-
-    seed = 42
-    torch.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
+    os.chdir(desired_directory)
+    sys.path.insert(0, desired_directory)
+    from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+    from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
     # read in config
     parser = argparse.ArgumentParser()
@@ -48,14 +44,18 @@ if __name__ == "__main__":
         else:
             args_dict[key] = value
 
-    # wandb.init(project='Sampling_PMHC_progress', entity=args.entity, name=args.run_name,)
+    # wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
     _wandb = None
+
     num_samples = args.num_samples
     sample_batch_size = args.sample_batch_size
     sample_savepath = args.sample_savepath
 
+    files = glob.glob(os.path.join(args.checkpoint, f"best*"))
+    checkpoint = max(files, key=os.path.getctime)
+
     lightning_model = Structure_Prediction_Model.load_from_checkpoint(
-                    args.checkpoint,
+                    checkpoint,
                     dataset=args.dataset,
                     data_dir=args.data_dir,
                     dataset_params=args.dataset_params,
@@ -87,8 +87,6 @@ if __name__ == "__main__":
 
     for i in range(0, 1000, sample_batch_size):
 
-        if i > 0: continue
-
         start_time = time.time()
 
         # prepare peptide-MHC
@@ -98,7 +96,7 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb)
+        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb, args.run_name)
 
         # Safe resulting structures
         size_tuple = tuple(molecule['size'].tolist())
