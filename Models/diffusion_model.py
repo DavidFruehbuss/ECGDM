@@ -133,8 +133,11 @@ class Conditional_Diffusion_Model(nn.Module):
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
 
         # Log sampling progress TODO:1
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        error_mol = scatter_add(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
+
 
         if self.training:
 
@@ -300,7 +303,8 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = error_pro * t_not_0_mask
 
         # Normalize loss_t by graph size
-        error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+        # error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
+        error_mol = error_mol / ((self.x_dim) * molecule['size'])
         error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
         loss_t = 0.5 * (error_mol + error_pro) # * SNR_t
 
@@ -605,8 +609,10 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        error_mol = scatter_add(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise is {rmse.mean(0)}')
 
         if self.com_old:
@@ -619,32 +625,11 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
-
-        # # visualisation (1)
-        # fig1 = plt.figure(1)
-        # ax = fig1.add_subplot(111, projection='3d')
-
-        # # Plot the first point cloud
-        # ax.scatter(xh_mol[:, 0].cpu(), xh_mol[:, 1].cpu(), xh_mol[:, 2].cpu(), color='red', label='Peptide')
-
-        # # Plot the second point cloud
-        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
-
-        # # Adding labels and title
-        # ax.set_xlabel('X Coordinate')
-        # ax.set_ylabel('Y Coordinate')
-        # ax.set_zlabel('Z Coordinate')
-        # ax.set_title('Before')
-        # ax.legend()
-
-        ##################
-
-        # print(molecule['idx'])
-        # print(molecule['idx'].shape)
-        # print(molecule['size'])
 
         # # Sanaty check
         molecule_xx = molecule['x']
@@ -652,8 +637,10 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_t_mol = torch.cat((molecule_xx, molecule_h), dim=1)
         z_t_pro = xh_pro
 
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        error_mol = scatter_add(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Sanity check 1 (self): {rmse.mean(0)}')
 
         eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
@@ -677,19 +664,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
             z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
 
-            for i in range(len(molecule['size'])):
-
-                    # (1) extract the peptide position
-                    pos = z_t_mol[:,:3]
-                    peptide_pos = pos[molecule['idx'] == i]
-                    # (2) bring peptides into correct order
-                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
-                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
-                    # (3) get graph name for elemnt in batch
-                    graph_name = molecule['graph_name'][i]
-
-                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'N_{ts}')
+            self.safe_pdbs(z_t_mol, molecule, run_id, time_step=f'N_{ts}')
 
             # use neural network to predict noise
             epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t_array, molecule['idx'], protein_pocket['idx'], molecule_pos)
@@ -706,42 +681,22 @@ class Conditional_Diffusion_Model(nn.Module):
             # print(f'alpha[mol_idx] {expanend_fraction.shape}')
 
             # TODO: sqrt after, normalize with ((3) * molecule['size'])
-            error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            # error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+            rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
 
-            error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            # error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+            rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
 
-            for i in range(len(molecule['size'])):
-
-                    # (1) extract the peptide position
-                    pos = z_data_hat[:,:3]
-                    peptide_pos = pos[molecule['idx'] == i]
-                    # (2) bring peptides into correct order
-                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
-                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
-                    # (3) get graph name for elemnt in batch
-                    graph_name = molecule['graph_name'][i]
-
-                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'DN{ts}')
+            self.safe_pdbs(z_data_hat, molecule, run_id, time_step=f'DN{ts}')
 
         # Visualize true peptide pmhc
-        for i in range(len(molecule['size'])):
-
-                # (1) extract the peptide position
-                pos = z_data_hat_2[:,:3]
-                peptide_pos = pos[molecule['idx'] == i]
-                # (2) bring peptides into correct order
-                peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
-                peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
-                # (3) get graph name for elemnt in batch
-                graph_name = molecule['graph_name'][i]
-
-                # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-                create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'T{ts}')
+        self.safe_pdbs(z_data_hat_2, molecule, run_id, time_step=f'T{ts}')
 
         ##################
         # Sanity Check with 500 steps from 500 noised sample
@@ -753,20 +708,7 @@ class Conditional_Diffusion_Model(nn.Module):
         for s in reversed(range(0,self.T)):
 
             if s % 100 == 0:
-
-                for i in range(len(molecule['size'])):
-
-                    # (1) extract the peptide position
-                    pos = xh_mol[:,:3]
-                    peptide_pos = pos[molecule['idx'] == i]
-                    # (2) bring peptides into correct order
-                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
-                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
-                    # (3) get graph name for elemnt in batch
-                    graph_name = molecule['graph_name'][i]
-
-                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=s)
+                self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
 
             # time arrays
             s_array = torch.full((num_samples, 1), fill_value=s, device=device)
@@ -819,8 +761,10 @@ class Conditional_Diffusion_Model(nn.Module):
                 dumy_variable = 0
 
             # Log sampling progress
-            error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+            error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+            rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
 
@@ -874,19 +818,25 @@ class Conditional_Diffusion_Model(nn.Module):
         mol_target += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
 
         # Log sampling progress
-        error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
+        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        error_mol = scatter_add(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Final RSME: {rmse.mean(0)}')
         # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
-        #######################################
-        ## Creating new pdb files
+        self.safe_pdbs(xh_mol_final, molecule, run_id, time_step='F')
+        
+
+        return sampled_structures
+    
+    def safe_pdbs(self, pos, molecule, run_id, time_step):
 
         for i in range(len(molecule['size'])):
             # (1) extract the peptide position
-            pos = xh_mol_final[:,:3]
+            pos = pos[:,:3]
             peptide_pos = pos[molecule['idx'] == i]
             # (2) bring peptides into correct order
             peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
@@ -895,27 +845,4 @@ class Conditional_Diffusion_Model(nn.Module):
             graph_name = molecule['graph_name'][i]
 
             # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step='F')
-
-        #######################################
-
-        # # visualisation (1)
-        # fig2 = plt.figure(2)
-        # ax = fig2.add_subplot(111, projection='3d')
-
-        # # Plot the first point cloud
-        # ax.scatter(xh_mol_final[:, 0].cpu(), xh_mol_final[:, 1].cpu(), xh_mol_final[:, 2].cpu(), color='red', label='Peptide')
-
-        # # Plot the second point cloud
-        # ax.scatter(xh_pro[:, 0].cpu(), xh_pro[:, 1].cpu(), xh_pro[:, 2].cpu(), color='blue', label='Pocket')
-
-        # # Adding labels and title
-        # ax.set_xlabel('X Coordinate')
-        # ax.set_ylabel('Y Coordinate')
-        # ax.set_zlabel('Z Coordinate')
-        # ax.set_title('After')
-        # ax.legend()
-
-        # plt.show()
-
-        return sampled_structures
+            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=time_step)
