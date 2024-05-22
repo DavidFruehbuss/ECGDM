@@ -175,7 +175,7 @@ class Conditional_Diffusion_Model(nn.Module):
         t = torch.randint(t_low, self.T + 1, size=(batch_size, 1), device=device)
 
         # high_noise_training_schedule
-        self.high_noise_training_schedule = True
+        self.high_noise_training_schedule = False
         if self.high_noise_training_schedule:
             split_point = int(0.8 * self.T)
             t = torch.empty((batch_size, 1), device=device)
@@ -677,6 +677,20 @@ class Conditional_Diffusion_Model(nn.Module):
 
             z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
 
+            for i in range(len(molecule['size'])):
+
+                    # (1) extract the peptide position
+                    pos = z_t_mol[:,:3]
+                    peptide_pos = pos[molecule['idx'] == i]
+                    # (2) bring peptides into correct order
+                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
+                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+                    # (3) get graph name for elemnt in batch
+                    graph_name = molecule['graph_name'][i]
+
+                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
+                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'N_{ts}')
+
             # use neural network to predict noise
             epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t_array, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
@@ -691,7 +705,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # print(f'sigma/alpha {(sigma_t / alpha_t).shape}')
             # print(f'alpha[mol_idx] {expanend_fraction.shape}')
 
-
+            # TODO: sqrt after, normalize with ((3) * molecule['size'])
             error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
@@ -699,6 +713,35 @@ class Conditional_Diffusion_Model(nn.Module):
             error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
+
+            for i in range(len(molecule['size'])):
+
+                    # (1) extract the peptide position
+                    pos = z_data_hat[:,:3]
+                    peptide_pos = pos[molecule['idx'] == i]
+                    # (2) bring peptides into correct order
+                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
+                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+                    # (3) get graph name for elemnt in batch
+                    graph_name = molecule['graph_name'][i]
+
+                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
+                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'DN{ts}')
+
+        # Visualize true peptide pmhc
+        for i in range(len(molecule['size'])):
+
+                # (1) extract the peptide position
+                pos = z_data_hat_2[:,:3]
+                peptide_pos = pos[molecule['idx'] == i]
+                # (2) bring peptides into correct order
+                peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
+                peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+                # (3) get graph name for elemnt in batch
+                graph_name = molecule['graph_name'][i]
+
+                # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
+                create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=f'T{ts}')
 
         ##################
         # Sanity Check with 500 steps from 500 noised sample
@@ -708,6 +751,22 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,self.T)):
+
+            if s % 100 == 0:
+
+                for i in range(len(molecule['size'])):
+
+                    # (1) extract the peptide position
+                    pos = xh_mol[:,:3]
+                    peptide_pos = pos[molecule['idx'] == i]
+                    # (2) bring peptides into correct order
+                    peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
+                    peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+                    # (3) get graph name for elemnt in batch
+                    graph_name = molecule['graph_name'][i]
+
+                    # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
+                    create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=s)
 
             # time arrays
             s_array = torch.full((num_samples, 1), fill_value=s, device=device)
@@ -762,7 +821,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # Log sampling progress
             error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
             rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
-            # print(rmse.mean(0))
+            print(rmse.mean(0))
             # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
@@ -830,18 +889,13 @@ class Conditional_Diffusion_Model(nn.Module):
             pos = xh_mol_final[:,:3]
             peptide_pos = pos[molecule['idx'] == i]
             # (2) bring peptides into correct order
-            print(molecule['pos_in_seq'])
             peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
             peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
             # (3) get graph name for elemnt in batch
             graph_name = molecule['graph_name'][i]
 
-            print(peptide_idx)
-            print(peptide_pos_orderd.shape)
-            print(graph_name)
-
             # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id)
+            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step='F')
 
         #######################################
 
