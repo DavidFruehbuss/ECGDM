@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=env_s
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=04:00:00
+#SBATCH --output=../Outs/env_s.out
+
+module purge
+module 2021
+module load Anaconda3/2021.05
+
+cd $HOME/ECGDM/
+conda env create -f environment.yml

@@ -10,13 +10,13 @@ import os
 import pickle
 
 def create_new_pdb(
-        peptide, graph_name, run_id
+        peptide, graph_name, run_id, time_step
 ):
     pdb_number = extract_pdb_number(graph_name)
     pdb_reference_path_or_stream = find_pdb_filepath(pdb_number)
 
     # pdb_output_path
-    pdb_output_path = f'./Data/Peptide_data/sampled_pmhcs/{run_id}/BA-{pdb_number}.pdb'
+    pdb_output_path = f'./Data/Peptide_data/sampled_pmhcs/{run_id}/BA-{pdb_number}_{time_step}.pdb'
 
     directory = os.path.dirname(pdb_output_path)
     if not os.path.exists(directory):
