@@ -5,14 +5,14 @@
 #SBATCH --job-name=moad_egnn
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --time=12:00:00
-#SBATCH --output=../Outs/moad_egnn_ca_train_2.out
+#SBATCH --time=24:00:00
+#SBATCH --output=../Outs/moad_egnn_ca_train_1.out
 
 module purge
 module 2021
 module load Anaconda3/2021.05
 
-source activate ponita
+source activate ecgdm
 
 cd $HOME/ECGDM/
 srun python -u Experiments/Structure_prediction/train.py --config Experiments/Structure_prediction/configs/SP_moad_egnn.yml

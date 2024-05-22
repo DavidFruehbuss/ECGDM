@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#SBATCH --partition=rome
+#SBATCH --job-name=sidechain_preprocessing
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=04:00:00
+#SBATCH --output=../Outs/sidechain_preprocessing.out
+
+module purge
+module 2021
+module load Anaconda3/2021.05
+
+source activate sidechains
+
+cd $HOME/ECGDM/
+srun python -u Data/Peptide_data/dataset_sidechain.py

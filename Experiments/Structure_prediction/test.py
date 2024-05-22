@@ -6,7 +6,6 @@ import os
 import time
 import pickle
 import gzip
-import glob
 
 import os
 import sys
@@ -51,11 +50,8 @@ if __name__ == "__main__":
     sample_batch_size = args.sample_batch_size
     sample_savepath = args.sample_savepath
 
-    files = glob.glob(os.path.join(args.checkpoint, f"best*"))
-    checkpoint = max(files, key=os.path.getctime)
-
     lightning_model = Structure_Prediction_Model.load_from_checkpoint(
-                    checkpoint,
+                    args.checkpoint,
                     dataset=args.dataset,
                     data_dir=args.data_dir,
                     dataset_params=args.dataset_params,
@@ -85,7 +81,7 @@ if __name__ == "__main__":
 
     start_time_total = time.time()
 
-    for i in range(0, 1000, sample_batch_size):
+    for i in range(0, 2, sample_batch_size):
 
         start_time = time.time()
 

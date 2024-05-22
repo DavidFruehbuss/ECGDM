@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=pmhc_egnn_D_high_noise
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=10:00:00
+#SBATCH --output=../Outs/pmhc_egnn_ca_train_D_high_noise.out
+
+module purge
+module 2021
+module load Anaconda3/2021.05
+
+source activate ecgdm
+
+cd $HOME/ECGDM/
+srun python -u Experiments/Structure_prediction/train.py --config Experiments/Structure_prediction/configs/SP_pmhc_egnn.yml
+
+# srun python -u Experiments/Structure_prediction/test.py --config Experiments/Structure_prediction/configs/SP_pmhc_egnn.yml

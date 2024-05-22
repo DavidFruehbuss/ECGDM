@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=pmhc_ponita_1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=04:00:00
+#SBATCH --output=../Outs/pmhc_ponita_ca_train_1.out
+
+module purge
+module 2021
+module load Anaconda3/2021.05
+
+source activate ecgdm
+
+cd $HOME/ECGDM/
+srun python -u Experiments/Structure_prediction/train.py --config Experiments/Structure_prediction/configs/SP_pmhc_ponita.yml
