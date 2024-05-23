@@ -107,10 +107,9 @@ if __name__ == "__main__":
         # Goal structure ['x_predicted']: [sample_key][10 * [9,3]], ['x_target']: [sample_key][1 * [9,3]]
 
         # Calculate the RMSE error
-        error_mol = scatter_add(torch.sqrt(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # Normalize loss_t by graph size
-        mse = error_mol / ((3 + args.dataset_params.num_atoms) * molecule['size'])
-        rmse = torch.sqrt(mse)
+        error_mol = scatter_add(torch.sum((molecule['x'] - xh_mol_final[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
+
         rmse_sample_mean = [rmse[j*num_samples:(j+1)*num_samples].mean(0) for j in range(sample_batch_size)]
         rmse_sample_best = [rmse[j*num_samples:(j+1)*num_samples].min(0)[0] for j in range(sample_batch_size)]
 

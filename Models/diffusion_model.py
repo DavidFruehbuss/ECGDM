@@ -102,7 +102,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
 
-        self.com_old = True
+        self.com_old = False
         
     def forward(self, z_data):
 
@@ -132,9 +132,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # above is revers of this equation
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
 
-        # Log sampling progress TODO:1
-        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
+        # Log sampling progress to wandb
         error_mol = scatter_add(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
 
@@ -303,7 +301,6 @@ class Conditional_Diffusion_Model(nn.Module):
         error_pro = error_pro * t_not_0_mask
 
         # Normalize loss_t by graph size
-        # error_mol = error_mol / ((self.x_dim + self.num_atoms) * molecule['size'])
         error_mol = error_mol / ((self.x_dim) * molecule['size'])
         error_pro = error_pro / ((self.x_dim + self.num_residues * protein_pocket['size']))
         loss_t = 0.5 * (error_mol + error_pro) # * SNR_t
@@ -609,8 +606,6 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
         xh_pro = torch.cat((protein_pocket['x'], protein_pocket['h']), dim=1)
 
-        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         error_mol = scatter_add(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise is {rmse.mean(0)}')
@@ -625,8 +620,6 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
@@ -637,8 +630,6 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_t_mol = torch.cat((molecule_xx, molecule_h), dim=1)
         z_t_pro = xh_pro
 
-        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         error_mol = scatter_add(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Sanity check 1 (self): {rmse.mean(0)}')
@@ -680,15 +671,10 @@ class Conditional_Diffusion_Model(nn.Module):
             # print(f'sigma/alpha {(sigma_t / alpha_t).shape}')
             # print(f'alpha[mol_idx] {expanend_fraction.shape}')
 
-            # TODO: sqrt after, normalize with ((3) * molecule['size'])
-            # error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
             rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
 
-            # error_mol = scatter_add(torch.sqrt(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1), molecule['idx'], dim=0)
             rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
@@ -761,8 +747,6 @@ class Conditional_Diffusion_Model(nn.Module):
                 dumy_variable = 0
 
             # Log sampling progress
-            # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-            # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
             error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
             rmse = torch.sqrt(error_mol / (3 * molecule['size']))
             print(rmse.mean(0))
@@ -818,8 +802,6 @@ class Conditional_Diffusion_Model(nn.Module):
         mol_target += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
 
         # Log sampling progress
-        # error_mol = scatter_add(torch.sqrt(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1)), molecule['idx'], dim=0)
-        # rmse = error_mol / ((3 + self.num_atoms) * molecule['size'])
         error_mol = scatter_add(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Final RSME: {rmse.mean(0)}')
