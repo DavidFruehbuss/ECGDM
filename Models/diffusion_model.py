@@ -178,7 +178,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # high_noise_training_schedule
         self.high_noise_training_schedule = False
         if self.high_noise_training_schedule:
-            split_point = int(0.8 * self.T)
+            split_point = int(0.95 * self.T)
             t = torch.empty((batch_size, 1), device=device)
             for i in range(batch_size):
                 rnd = torch.rand(1, device=device)
