@@ -48,7 +48,7 @@ class NN_Model(nn.Module):
 
         # positional encoding
         self.position_encoding = True
-        self.pE_dim = 20
+        self.pE_dim = 10
         # self.edge_sin_attr = True
 
         # edge parameters
@@ -293,8 +293,8 @@ class NN_Model(nn.Module):
             if self.architecture == 'egnn':
 
                 # choose whether to get protein_pocket corrdinates fixed
-                protein_pocket_fixed = None if self.protein_pocket_fixed \
-                    else torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
+                # TODO: check this one in detail; possibly wrong as well !!!
+                protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.zeros_like(protein_pocket_idx))).unsqueeze(1)
 
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
@@ -337,7 +337,8 @@ class NN_Model(nn.Module):
             raise ValueError("NaN detected in EGNN output")
         
         # remove mean batch of the position only for joint
-        if self.protein_pocket_fixed:
+        # TODO: this might have been wrong
+        if not self.protein_pocket_fixed:
             displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)[idx_joint]
 
         # output
