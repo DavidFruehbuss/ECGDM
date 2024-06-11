@@ -338,7 +338,7 @@ class NN_Model(nn.Module):
         
         # remove mean batch of the position only for joint
         # TODO: this might have been wrong
-        if not self.protein_pocket_fixed:
+        if self.protein_pocket_fixed == False:
             displacement_vec = displacement_vec - scatter_mean(displacement_vec, idx_joint, dim=0)[idx_joint]
 
         # output

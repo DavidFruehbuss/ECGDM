@@ -10,7 +10,7 @@ import os
 import pickle
 
 def create_new_pdb(
-        peptide, graph_name, run_id, time_step
+        peptide, peptide_idx, graph_name, run_id, time_step
 ):
     pdb_number = extract_pdb_number(graph_name)
     pdb_reference_path_or_stream = find_pdb_filepath(pdb_number)
@@ -22,10 +22,10 @@ def create_new_pdb(
     if not os.path.exists(directory):
          os.makedirs(directory)
 
-    write_updated_peptide_coords_pdb(peptide, pdb_reference_path_or_stream, pdb_output_path)
+    write_updated_peptide_coords_pdb(peptide, peptide_idx, pdb_reference_path_or_stream, pdb_output_path)
     
 def write_updated_peptide_coords_pdb(
-    peptide, pdb_reference_path_or_stream, pdb_output_path, atom_level=False
+    peptide, peptide_idx, pdb_reference_path_or_stream, pdb_output_path, atom_level=False
 ):
     """
     Function from https://github.com/steusink/DiffSBDD.git
@@ -62,9 +62,11 @@ def write_updated_peptide_coords_pdb(
         if atom_level:
             element.set_coord(peptide[i])
         else:
-            ca_atom = element["CA"]
+            ca_atom = element["CA"] # might need to switch this to "CB"
             ca_atom.set_coord(peptide[i])
-            new_residue = Residue(element.get_id(), element.get_resname(), "")
+            id = element.get_id()
+            id = (' ', int(peptide_idx[i]), ' ')
+            new_residue = Residue(id, element.get_resname(), "")
             new_residue.add(ca_atom)
             peptide_chain_new.add(new_residue)
 

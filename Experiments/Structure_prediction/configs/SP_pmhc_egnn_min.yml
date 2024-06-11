@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_A2_edge_cutoffs/'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_A2_min/'
 project: 'Structur_prediction_RSMD'
-run_name: 'SP_pmhc_egnn_A2_edge_cutoffs'
+run_name: 'SP_pmhc_egnn_A2_min'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -28,7 +28,7 @@ dataset_params:
 
 generative_model: 'conditional_diffusion'
 generative_model_params:
-  timesteps: 1000
+  timesteps: 500
 
 architecture: 'egnn'
 network_params: 
@@ -40,8 +40,8 @@ network_params:
   # edges # TODO: need to check if that makes sense here
   edge_embedding_dim: 8
   edge_cutoff_ligand: null
-  edge_cutoff_pocket: 8.0
-  edge_cutoff_interaction: 14.0
+  edge_cutoff_pocket: 0.8
+  edge_cutoff_interaction: 1.4
   # egnn specific
   attention: True
   tanh: True
@@ -53,10 +53,10 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs/pmhc_egnn_H8_high_BS/checkpoints/last.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs/pmhc_egnn_A_min/checkpoints/best-model-epoch=epoch=135.ckpt' 
 num_samples: 1
 sample_batch_size: 10 # 10
-sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_H8_high_BS/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_A_min/samples'
 
 
 
