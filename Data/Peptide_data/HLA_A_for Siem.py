@@ -54,16 +54,16 @@ class Peptide_MHC_8K_Dataset(Dataset):
             onehot = torch.tensor(peptide['sequence_onehot'][:,:20])
             mhc_onehot = torch.tensor(mhc['sequence_onehot'][:,:20])
 
-            # output dict
+            # output dict # just renamed everything to fit Siems code
             data['graph_name'] = entry_name
-            data['peptide_idx'] = mask
-            data['peptide_positions'] = Rigid.from_tensor_4x4(frames_data).to_tensor_7()[:,4:] # convert to tensor, for collation
-            data['peptide_features'] = onehot
-            data['num_peptide_residues'] = peptide_len
-            data['protein_pocket_idx'] = mhc_mask
-            data['protein_pocket_positions'] = Rigid.from_tensor_4x4(mhc_frames_data).to_tensor_7()[:,4:] # convert to tensor, for collation
-            data['protein_pocket_features'] = mhc_onehot
-            data['num_protein_pocket_residues'] = mhc_len
+            data['lig_mask'] = mask
+            data['lig_coords'] = Rigid.from_tensor_4x4(frames_data).to_tensor_7()[:,4:] # convert to tensor, for collation
+            data['lig_one_hot'] = onehot
+            data['num_lig_atoms'] = peptide_len
+            data['pocket_mask'] = mhc_mask
+            data['pocket_c_alpha'] = Rigid.from_tensor_4x4(mhc_frames_data).to_tensor_7()[:,4:] # convert to tensor, for collation
+            data['pocket_one_hot'] = mhc_onehot
+            data['num_pocket_nodes'] = mhc_len
             data['pos_in_seq'] = torch.arange(peptide_len) + 1
 
         return data
