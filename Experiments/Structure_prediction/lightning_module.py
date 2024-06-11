@@ -143,7 +143,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         '''
         function to unpack the molecule and it's protein
         '''
-        if self.dataset == 'pmhc' or self.dataset == 'pmhc_8k':
+        if self.dataset == 'pmhc' or self.dataset == 'pmhc_8K':
 
             molecule = {
                 'x': data['peptide_positions'].to(self.device, FLOAT_TYPE),
