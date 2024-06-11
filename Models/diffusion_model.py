@@ -102,7 +102,9 @@ class Conditional_Diffusion_Model(nn.Module):
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
 
-        self.com_old = False
+        self.com_old = True
+        # This might be wrongly done, but is by far the simplest way to try this
+        self.noise_scaling = 1
         
     def forward(self, z_data):
 
@@ -111,9 +113,8 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # computing the target
         mol_target = molecule['x']
-        if self.com_old:
-            # old centering approach
-            mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        # move to COM-0
+        mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
 
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
@@ -130,7 +131,7 @@ class Conditional_Diffusion_Model(nn.Module):
         z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
 
         # above is revers of this equation
-        # z_t_mol = alpha_t[molecule['idx']] * xh_mol - sigma_t[molecule['idx']] * epsilon_mol
+        # z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
 
         # Log sampling progress to wandb
         error_mol = scatter_add(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
@@ -173,7 +174,9 @@ class Conditional_Diffusion_Model(nn.Module):
         # sample t ~ U(0,...,T) for each graph individually
         t_low = 0 if self.train else 1
 
-        t = torch.randint(t_low, self.T + 1, size=(batch_size, 1), device=device)
+        # max_T = int(self.T * 0.890) # modifier to only train up to a certain max_noise value
+        max_T = self.T
+        t = torch.randint(t_low, max_T + 1, size=(batch_size, 1), device=device)
 
         # high_noise_training_schedule
         self.high_noise_training_schedule = False
@@ -219,7 +222,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # compute noised sample z_t
             # for x cord. we mean center the normal noise for each graph
             # modify to only diffuse position of the molecule
-            eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
+            eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
             eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
             if self.com_old:
@@ -242,7 +245,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
             # compute noised representations
             # alpha_t: [16,1] -> [300,13] or [333,23] by indexing and broadcasting
-            # TODO: alpha value confuses me, doesn't this change the size of the complex
+            # TODO: alpha value confuses me, doesn't this change the size of the complex (unstable variance)
             # TODO:1 - instead of + ????
             z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
             # TODO: massive change [alternative is to update pocket in sampling as well]
@@ -480,7 +483,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # KL computation x
         zeros = torch.zeros_like(mu_x_mol)
-        ones = torch.ones_like(sigma_T_x)
+        ones = torch.ones_like(sigma_T_x) * self.noise_scaling
         mu_norm2 = scatter_add(torch.sum((mu_x_mol - zeros) ** 2, dim=-1), molecule['idx'], dim=0)
         d = (molecule['size'] - 1) * self.x_dim
         kl_x = d * torch.log(ones / sigma_T_x) + 0.5 * (d * sigma_T_x**2 + mu_norm2) / (ones**2) - 0.5 * d
@@ -591,7 +594,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # start with random peptide position (target hidden)
         # mean=COM, sigma=1, and sample epsioln
-        rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device)
+        rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device) * self.noise_scaling
         molecule_x = protein_pocket_com_before[molecule['idx']] + rand_eps_x
 
         # TODO: here features get changed! (for peptides need to turn this off somehow)
@@ -634,7 +637,8 @@ class Conditional_Diffusion_Model(nn.Module):
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Sanity check 1 (self): {rmse.mean(0)}')
 
-        eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
+        # epsilon for the sanity checks
+        eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
 
         if self.com_old:
             # old centering approach
@@ -645,7 +649,12 @@ class Conditional_Diffusion_Model(nn.Module):
 
         epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
 
-        for ts in [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]:
+        if self.T == 1000:
+            TS = [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]
+        else:
+            TS = [1, 2, 10, 25, 50, 100, 200, 300, 400, 450, 498]
+
+        for ts in TS:
 
             t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
             # normalize t
@@ -684,16 +693,30 @@ class Conditional_Diffusion_Model(nn.Module):
         # Visualize true peptide pmhc
         self.safe_pdbs(z_data_hat_2, molecule, run_id, time_step=f'T{ts}')
 
+        max_T = self.T
+
         ##################
-        # Sanity Check with 500 steps from 500 noised sample
+        # Sanity Check with ts steps from ts/1000 noised sample
+        # ts = 950
+        # t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
+        # # normalize t
+        # t_array = t_array / self.T
+        # alpha_t = self.noise_schedule(t_array, 'alpha')
+        # sigma_t = self.noise_schedule(t_array, 'sigma')
+
+        # z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
+
+        # self.safe_pdbs(z_t_mol, molecule, run_id, time_step=f'SDNS_{ts}')
+
         # xh_mol = z_t_mol
+        # max_T = ts
         ##################
 
 
         # Iterativly denoise stepwise for t = T,...,1
-        for s in reversed(range(0,self.T)):
+        for s in reversed(range(0,max_T)):
 
-            if s % 100 == 0:
+            if s % 100 == 0 or s > 990:
                 self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
 
             # time arrays
@@ -725,11 +748,15 @@ class Conditional_Diffusion_Model(nn.Module):
             # compute p(z_s|z_t) using epsilon and alpha_s_given_t, sigma_s_given_t to predict mean and std of z_s
             mean_mol_s = xh_mol / alpha_t_given_s[molecule['idx']] - (sigma2_t_given_s / alpha_t_given_s / sigma_t)[molecule['idx']] * epsilon_hat_mol
             sigma_mol_s = sigma_t_given_s * sigma_s / sigma_t
-            eps_mol_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+            eps_mol_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device) * self.noise_scaling # Here noise scaling might not be needed
             eps_mol_random = eps_mol_random - scatter_mean(eps_mol_random, molecule['idx'], dim=0)[molecule['idx']]
             # the line bellow is where we would add the gaudi guidance (-> compute backbone and statistical potentials)
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
+
+            self.sampling_without_noise = False
+            if self.sampling_without_noise:
+                xh_mol = mean_mol_s
 
             if self.com_old:
                 dumy_variable = 0
@@ -763,7 +790,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute p(x|z_0) using epsilon and alpha_0, sigma_0 to predict mean and std of x
         mean_mol_final = 1. / alpha_0[molecule['idx']] * (xh_mol - sigma_0[molecule['idx']] * epsilon_hat_mol_0)
         sigma_mol_final = sigma_0 / alpha_0 # not sure about this one
-        eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device)
+        eps_lig_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device) * self.noise_scaling # Here noise scaling might not be needed
         xh_mol_final = mean_mol_final + sigma_mol_final[molecule['idx']] * eps_lig_random
         xh_pro_final = xh_pro.detach().clone() # for safety (probally not necessary)
 
@@ -822,9 +849,9 @@ class Conditional_Diffusion_Model(nn.Module):
             peptide_pos = pos[molecule['idx'] == i]
             # (2) bring peptides into correct order
             peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
-            peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+            # peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
             # (3) get graph name for elemnt in batch
             graph_name = molecule['graph_name'][i]
 
             # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-            create_new_pdb(peptide_pos_orderd, graph_name[0], run_id, time_step=time_step)
+            create_new_pdb(peptide_pos, peptide_idx, graph_name[0], run_id, time_step=time_step) # peptide_pos

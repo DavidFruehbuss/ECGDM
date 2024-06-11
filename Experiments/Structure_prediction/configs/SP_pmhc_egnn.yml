@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_D_high_noise/'
-project: 'Structur_prediction_dataset'
-run_name: 'SP_pmhc_egnn_D_high_noise'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_A2_half_fixed_p_corr/'
+project: 'Structur_prediction_RSMD'
+run_name: 'SP_pmhc_egnn_A2_half_fixed_p_corr'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -39,6 +39,7 @@ network_params:
   num_layers: 6
   # edges # TODO: need to check if that makes sense here
   edge_embedding_dim: 8
+  # is it possible that the edge-cutoffs are wrong by factor 10
   edge_cutoff_ligand: null
   edge_cutoff_pocket: 0.8
   edge_cutoff_interaction: 1.4

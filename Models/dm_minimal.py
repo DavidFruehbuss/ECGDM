@@ -436,11 +436,11 @@ class Conditional_Diffusion_Model(nn.Module):
         # If we want a new peptide we would have to add random sampling of the start peptide here^
 
         # define the target at the pocket position
-        mol_target_p = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+        mol_target_p = molecule['x']
         mol_target_p = mol_target_p + protein_pocket_com_before[molecule['idx']]
 
         # define the target at 0-COM
-        mol_target_0 = molecule['x'] - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+        mol_target_0 = molecule['x']
 
         # Normalisation
         # molecule['x'] = molecule['x'] / self.norm_values[0]
@@ -469,23 +469,12 @@ class Conditional_Diffusion_Model(nn.Module):
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise is {rmse.mean(0)}')
 
-        if self.com_old:
-            # old centering approach
-            xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
-        else:
-            # data is translated to 0, COM noise added and again translated to 0
-            mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
-            xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
-            xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
-
         error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
 
         # # Sanaty check
         molecule_xx = molecule['x']
-        molecule_xx[:,:self.x_dim] = molecule_xx[:,:self.x_dim] - scatter_mean(molecule_xx[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
         xh_t_mol = torch.cat((molecule_xx, molecule_h), dim=1)
         z_t_pro = xh_pro
 
@@ -495,22 +484,29 @@ class Conditional_Diffusion_Model(nn.Module):
 
         eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device)
 
-        if self.com_old:
-            # old centering approach
-            eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
-
         if self.features_fixed:
             eps_h_mol = torch.zeros(size=(len(xh_mol), self.num_atoms), device=device)
 
         epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
 
-        for ts in [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]:
+        if self.T == 1000:
+            TS = [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]
+        else:
+            TS = [1, 2, 10, 25, 50, 100, 200, 300, 400, 450, 498]
+
+        for ts in TS:
 
             t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
             # normalize t
             t_array = t_array / self.T
             alpha_t = self.noise_schedule(t_array, 'alpha')
             sigma_t = self.noise_schedule(t_array, 'sigma')
+
+            ## define very low sigma, alpha
+            # sigma_t = torch.tensor([0.0001]).to(molecule['x'].device)
+            # alpha_t = torch.sqrt(1-sigma_t**2)
+
+            self.safe_pdbs(xh_t_mol, molecule, run_id, time_step=f'start')
 
             z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
 
@@ -590,21 +586,6 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
-            if self.com_old:
-                dumy_variable = 0
-            else:
-                # project both pocket and peptide to 0 COM again (only mol mean changes)
-                mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
-                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
-                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
-
-            if self.com_old:
-                # old centering approach
-                xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
-                xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
-            else:
-                dumy_variable = 0
-
             # Log sampling progress
             error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
             rmse = torch.sqrt(error_mol / (3 * molecule['size']))
@@ -626,14 +607,6 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_mol_final = mean_mol_final + sigma_mol_final[molecule['idx']] * eps_lig_random
         xh_pro_final = xh_pro.detach().clone() # for safety (probally not necessary)
 
-        if self.com_old:
-                dumy_variable = 0
-        else:
-            # project both pocket and peptide to 0 COM again (only mol mean changes)
-            mean = scatter_mean(xh_mol_final[:,:self.x_dim], molecule['idx'], dim=0)
-            xh_mol_final[:,:self.x_dim] = xh_mol_final[:,:self.x_dim] - mean[molecule['idx']]
-            xh_pro_final[:,:self.x_dim] = xh_pro_final[:,:self.x_dim] - mean[protein_pocket['idx']]
-
         # Unnormalisation
         x_mol_final = xh_mol_final[:,:self.x_dim] * self.norm_values[0]
         h_mol_final = xh_mol_final[:,self.x_dim:] * self.norm_values[0]
@@ -652,7 +625,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # Testing if we only learn the form
         # Moving mol targets COM to 0
-        mol_target = molecule['x']  - scatter_mean(molecule['x'], molecule['idx'], dim=0)[molecule['idx']]
+        mol_target = molecule['x']
 
         xh_mol_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[molecule['idx']]
         xh_pro_final[:,:self.x_dim] += (protein_pocket_com_before - protein_pocket_com_after)[protein_pocket['idx']]
@@ -682,6 +655,8 @@ class Conditional_Diffusion_Model(nn.Module):
             # (2) bring peptides into correct order
             peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
             peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
+            # orderings are different to base ordering
+            # but they are also different to the pdb ordering
             # (3) get graph name for elemnt in batch
             graph_name = molecule['graph_name'][i]
 

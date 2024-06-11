@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_A2_edge_cutoffs/'
+logdir: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/'
 project: 'Structur_prediction_RSMD'
-run_name: 'SP_pmhc_egnn_A2_edge_cutoffs'
+run_name: 'SP_pmhc8k_egnn_E'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -19,8 +19,8 @@ task_params:
   features_fixed: True
 
 # Dataset
-dataset: 'pmhc'
-data_dir: '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
+dataset: 'pmhc_8K'
+data_dir: '/gpfs/work3/0/einf2380/data/tcrspec/'
 dataset_params:
   num_atoms: 20 # obtained from constant file
   num_residues: 20

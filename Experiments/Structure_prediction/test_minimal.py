@@ -25,7 +25,7 @@ if __name__ == "__main__":
     desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
     os.chdir(desired_directory)
     sys.path.insert(0, desired_directory)
-    from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+    from Experiments.Structure_prediction.lm_minimal import Structure_Prediction_Model
     from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 
     # read in config
@@ -69,14 +69,6 @@ if __name__ == "__main__":
     lightning_model = lightning_model.to(device)
     lightning_model.setup('test')
     test_dataset = lightning_model.test_dataset
-
-    ## calculate the test_dataset variance
-    var = []
-    for data in test_dataset:
-        pos = data['peptide_positions'].to(torch.float32)
-        var += [torch.sum((pos - torch.mean(pos, dim=0))**2, dim=0) / len(pos)]
-    dataset_variance = sum(var) / len(var)
-    print(dataset_variance)
 
     results = []
     saved_samples = {}
