@@ -1,8 +1,8 @@
 # Logging
-logdir: './Experiments/Structure_prediction/Logs/moad_egnn_2/'
+logdir: './Experiments/Structure_prediction/Logs/moad_egnn_3/'
 project: 'Structur_prediction'
-run_name: 'SP_moad_egnn_2'
-entity: 'neuro-ai-scientist'
+run_name: 'SP_moad_egnn_3'
+entity: 'neuroai-scientist'
 
 # Training
 num_epochs: 500
@@ -17,10 +17,11 @@ num_workers: 1
 task_params:
   protein_pocket_fixed: True
   features_fixed: False
+  position_encoding: False
 
 # Dataset
 dataset: 'ligand'
-data_dir: '/content/drive/MyDrive/processed_noH_ca_only' # './Data/Ligand_data/MOAD/processed_noH_ca_only'
+data_dir: './Data/Ligand_data/MOAD/processed_noH_ca_only'
 dataset_params:
   num_atoms: 10 # obtained from constant file
   num_residues: 20
@@ -40,8 +41,8 @@ network_params:
   # edges
   edge_embedding_dim: 8
   edge_cutoff_ligand: null
-  edge_cutoff_pocket: 0.8
-  edge_cutoff_interaction: 1.4
+  edge_cutoff_pocket: 8.0
+  edge_cutoff_interaction: 14
   # egnn specific
   attention: True
   tanh: True
@@ -53,8 +54,10 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: '/content/drive/MyDrive/checkpoint/'
-num_samples: 10
+checkpoint: './Experiments/Structure_prediction/Logs/MOAD_egnn_1/checkpoints/best-model-epoch=epoch=279.ckpt' 
+num_samples: 1
+sample_batch_size: 10 # 10
+sample_savepath: './Experiments/Structure_prediction/Logs/MOAD_egnn_1/samples'
 
 
 

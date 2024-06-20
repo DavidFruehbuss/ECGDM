@@ -17,6 +17,7 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
+  position_encoding: True
 
 # Dataset
 dataset: 'pmhc'

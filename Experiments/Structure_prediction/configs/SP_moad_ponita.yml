@@ -17,10 +17,11 @@ num_workers: 1
 task_params:
   protein_pocket_fixed: True
   features_fixed: False
+  position_encoding: False
 
 # Dataset
 dataset: 'ligand'
-data_dir: '/content/drive/MyDrive/processed_noH_ca_only' # './Data/Ligand_data/MOAD/processed_noH_ca_only'
+data_dir: './Data/Ligand_data/MOAD/processed_noH_ca_only'
 dataset_params:
   num_atoms: 10 # obtained from constant file
   num_residues: 20
@@ -30,7 +31,7 @@ generative_model: 'conditional_diffusion'
 generative_model_params:
   timesteps: 500
 
-architecture: 'ponita'
+architcture: 'ponita'
 network_params: 
   # general network parameters
   conditioned_on_time: True # modify to string

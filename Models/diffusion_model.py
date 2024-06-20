@@ -76,6 +76,7 @@ class Conditional_Diffusion_Model(nn.Module):
         neural_net: nn.Module,
         protein_pocket_fixed: bool,
         features_fixed: bool,
+        position_encoding: bool,
         timesteps: int,
         num_atoms: int,
         num_residues: int,
@@ -92,6 +93,7 @@ class Conditional_Diffusion_Model(nn.Module):
         self.T = timesteps
         self.protein_pocket_fixed = protein_pocket_fixed
         self.features_fixed = features_fixed
+        self.position_encoding = position_encoding
 
         # dataset info
         self.num_atoms = num_atoms
@@ -109,7 +111,10 @@ class Conditional_Diffusion_Model(nn.Module):
     def forward(self, z_data):
 
         molecule, protein_pocket = z_data
-        molecule_pos = molecule['pos_in_seq']
+        if self.position_encoding:
+            molecule_pos = molecule['pos_in_seq']
+        else:
+            molecule_pos = None
 
         # computing the target
         mol_target = molecule['x']
@@ -334,7 +339,10 @@ class Conditional_Diffusion_Model(nn.Module):
             t,
     ):
         ### Additional evaluation (VLB) variables
-        molecule_pos = molecule['pos_in_seq']
+        if self.position_encoding:
+            molecule_pos = molecule['pos_in_seq']
+        else:
+            molecule_pos = None
 
         # compute the sum squared error loss per graph
         error_mol = scatter_add(torch.sum((epsilon_mol - epsilon_hat_mol)**2, dim=-1), molecule['idx'], dim=0)
@@ -569,7 +577,10 @@ class Conditional_Diffusion_Model(nn.Module):
         # replicate (molecule + protein_pocket) to have a batch of num_samples many replicates
         # do this step with Dataset function in lightning_modules
         device = molecule['x'].device
-        molecule_pos = molecule['pos_in_seq']
+        if self.position_encoding:
+            molecule_pos = molecule['pos_in_seq']
+        else:
+            molecule_pos = None
         num_samples = len(molecule['size'])
 
         # Record protein_pocket center of mass before
@@ -601,9 +612,9 @@ class Conditional_Diffusion_Model(nn.Module):
         if self.features_fixed:
             molecule_h = molecule['h']
         else:
-            # for this starting h and updating would change
-            print('Shouldnt be reached')
-            molecule_h = torch.zeros((protein_pocket['h'].size), device=device)
+            # run moad sampling with only structure diffusion
+            molecule_h = molecule['h']
+            # molecule_h = torch.zeros((protein_pocket['h'].size), device=device)
 
         # combine position and features
         xh_mol = torch.cat((molecule_x, molecule_h), dim=1)
@@ -754,7 +765,7 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
-            self.sampling_without_noise = False
+            self.sampling_without_noise = True
             if self.sampling_without_noise:
                 xh_mol = mean_mol_s
 
@@ -843,6 +854,10 @@ class Conditional_Diffusion_Model(nn.Module):
     
     def safe_pdbs(self, pos, molecule, run_id, time_step):
 
+        if not self.features_fixed:
+            # idicates ligand (not peptide) dataset
+            return
+
         for i in range(len(molecule['size'])):
             # (1) extract the peptide position
             pos = pos[:,:3]
@@ -851,7 +866,12 @@ class Conditional_Diffusion_Model(nn.Module):
             peptide_idx = molecule['pos_in_seq'][molecule['idx'] == i]
             # peptide_pos_orderd = peptide_pos[peptide_idx-1] # pos starts at 1
             # (3) get graph name for elemnt in batch
-            graph_name = molecule['graph_name'][i]
+            # print(molecule['graph_name'])
+            if isinstance(molecule['graph_name'], str):
+                graph_name = molecule['graph_name']
+            else:
+                graph_name = molecule['graph_name'][i]
+
 
             # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-            create_new_pdb(peptide_pos, peptide_idx, graph_name[0], run_id, time_step=time_step) # peptide_pos
+            create_new_pdb(peptide_pos, peptide_idx, graph_name, run_id, time_step=time_step) # peptide_pos
