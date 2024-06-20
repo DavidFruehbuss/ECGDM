@@ -1,8 +1,8 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_A2_half_fixed_p_corr/'
-project: 'Structur_prediction_RSMD'
-run_name: 'SP_pmhc_egnn_A2_half_fixed_p_corr'
-entity: 'neuro-ai-scientist'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_compare/'
+project: 'Structur_prediction'
+run_name: 'SP_pmhc_egnn_compare'
+entity: 'neuroai-scientist'
 
 # Training
 num_epochs: 1000
@@ -17,6 +17,7 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
+  position_encoding: True
 
 # Dataset
 dataset: 'pmhc'
@@ -41,8 +42,8 @@ network_params:
   edge_embedding_dim: 8
   # is it possible that the edge-cutoffs are wrong by factor 10
   edge_cutoff_ligand: null
-  edge_cutoff_pocket: 0.8
-  edge_cutoff_interaction: 1.4
+  edge_cutoff_pocket: 8.0
+  edge_cutoff_interaction: 14.0
   # egnn specific
   attention: True
   tanh: True

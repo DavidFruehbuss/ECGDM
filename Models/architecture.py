@@ -21,6 +21,7 @@ class NN_Model(nn.Module):
             architecture: str,
             protein_pocket_fixed: bool,
             features_fixed: bool,
+            position_encoding: bool,
             network_params,
             num_atoms: int,
             num_residues: int,
@@ -47,7 +48,7 @@ class NN_Model(nn.Module):
         self.conditioned_on_time = network_params.conditioned_on_time
 
         # positional encoding
-        self.position_encoding = True
+        self.position_encoding = position_encoding
         self.pE_dim = 10
         # self.edge_sin_attr = True
 
@@ -163,7 +164,7 @@ class NN_Model(nn.Module):
 
 
 
-    def forward(self, z_t_mol, z_t_pro, t, molecule_idx, protein_pocket_idx, molecule_pos):
+    def forward(self, z_t_mol, z_t_pro, t, molecule_idx, protein_pocket_idx, molecule_pos=None):
 
         '''
         Inputs:

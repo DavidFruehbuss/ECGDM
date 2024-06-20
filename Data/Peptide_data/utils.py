@@ -12,7 +12,9 @@ import pickle
 def create_new_pdb(
         peptide, peptide_idx, graph_name, run_id, time_step
 ):
+    # print(graph_name)
     pdb_number = extract_pdb_number(graph_name)
+    # print(pdb_number)
     pdb_reference_path_or_stream = find_pdb_filepath(pdb_number)
 
     # pdb_output_path
@@ -82,7 +84,7 @@ def write_updated_peptide_coords_pdb(
 
 def extract_pdb_number(input_string):
     # Use regular expression to find sequences of digits in the input string
-    match = re.search(r'\d+', input_string)
+    match = re.search(r'(?<=[-\s])\d+', input_string)
     if match:
         return match.group(0)
     else:

@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_E_small_model_com_old/'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_E_small_model_Bmax08_com_old/'
 project: 'Structur_prediction_RSMD'
-run_name: 'SP_pmhc_egnn_E_small_model_com_old'
+run_name: 'SP_pmhc_egnn_E_small_model_Bmax08_com_old'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -17,6 +17,7 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
+  position_encoding: True
 
 # Dataset
 dataset: 'pmhc'
@@ -54,10 +55,10 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs/pmhc_egnn_H8_high_BS/checkpoints/last.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs/pmhc_egnn_E_small_model_Bmax08_com_old/checkpoints/best-model-epoch=epoch=136.ckpt' 
 num_samples: 1
 sample_batch_size: 10 # 10
-sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_H8_high_BS/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_E_small_model_Bmax08_com_old/samples_DN'
 
 
 
