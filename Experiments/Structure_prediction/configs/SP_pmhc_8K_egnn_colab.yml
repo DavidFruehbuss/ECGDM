@@ -17,10 +17,11 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
+  position_encoding: True
 
 # Dataset
 dataset: 'pmhc_8K'
-data_dir: '/content/drive/MyDrive/pmhc/BA_pMHCI_train_fold1.hdf5'
+data_dir: '/content/drive/MyDrive/pmhc/'
 dataset_params:
   num_atoms: 20 # obtained from constant file
   num_residues: 20
