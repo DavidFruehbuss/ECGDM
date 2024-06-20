@@ -104,7 +104,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Noise Schedule
         self.noise_schedule = Noise_Schedule(self.T)
 
-        self.com_old = True
+        self.com_old = False
         # This might be wrongly done, but is by far the simplest way to try this
         self.noise_scaling = 1
         
@@ -765,7 +765,7 @@ class Conditional_Diffusion_Model(nn.Module):
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
-            self.sampling_without_noise = True
+            self.sampling_without_noise = False
             if self.sampling_without_noise:
                 xh_mol = mean_mol_s
 
