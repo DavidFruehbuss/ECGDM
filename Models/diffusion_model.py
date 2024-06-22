@@ -116,24 +116,43 @@ class Conditional_Diffusion_Model(nn.Module):
         else:
             molecule_pos = None
 
+        print(f'Molecule {molecule}')
+        print(f'protein_pocket {protein_pocket}')
+
         # computing the target
         mol_target = molecule['x']
         # move to COM-0
         mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
 
+        print(f'mol_target {mol_target}')
+
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
+        print(f'z_t_mol {z_t_mol}')
+        print(f'z_t_pro {z_t_pro}')
+        print(f'epsilon_mol {epsilon_mol}')
+        print(f'epsilon_pro {epsilon_pro}')
+        print(f't {t}')
+
         # use neural network to predict noise
         epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
+
+        print(f'epsilon_hat_mol {epsilon_hat_mol}')
+        print(f'epsilon_hat_pro {epsilon_hat_pro}')
 
         # compute alpha, sigma
         alpha_t = self.noise_schedule(t, 'alpha')
         sigma_t = self.noise_schedule(t, 'sigma')
 
+        print(f'alpha_t {alpha_t}')
+        print(f'sigma_t {sigma_t}')
+
         # compute denoised sample
         # original equation
         z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+
+        print(f'z_data_hat {z_data_hat}')
 
         # above is revers of this equation
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
@@ -176,12 +195,20 @@ class Conditional_Diffusion_Model(nn.Module):
         protein_pocket['x'] = protein_pocket['x'] / self.norm_values[0]
         protein_pocket['h'] = protein_pocket['h'] / self.norm_values[1]
 
+        print(f'molecule_x {molecule['x']}')
+        print(f'molecule_h {molecule['h']}')
+        print(f'protein_pocket_x {protein_pocket['x']}')
+        print(f'protein_pocket_h {protein_pocket['h']}')
+
         # sample t ~ U(0,...,T) for each graph individually
         t_low = 0 if self.train else 1
 
         # max_T = int(self.T * 0.890) # modifier to only train up to a certain max_noise value
         max_T = self.T
         t = torch.randint(t_low, max_T + 1, size=(batch_size, 1), device=device)
+
+        ## TODO: Fix t for comparssion
+        t = 100
 
         # high_noise_training_schedule
         self.high_noise_training_schedule = False
@@ -224,11 +251,17 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
+                print(f'xh_mol after mean {xh_mol}')
+                print(f'xh_pro after mean {xh_pro}')
+
             # compute noised sample z_t
             # for x cord. we mean center the normal noise for each graph
             # modify to only diffuse position of the molecule
             eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
             eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
+
+            print(f'eps_x_mol {eps_x_mol}')
+            print(f'eps_x_pro {eps_x_pro}')
 
             if self.com_old:
                 # old centering approach
@@ -264,6 +297,9 @@ class Conditional_Diffusion_Model(nn.Module):
                 mean = scatter_mean(z_t_mol[:,:self.x_dim], molecule['idx'], dim=0)
                 z_t_mol[:,:self.x_dim] = z_t_mol[:,:self.x_dim] - mean[molecule['idx']]
                 z_t_pro[:,:self.x_dim] = z_t_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
+
+            print(f'z_t_mol {z_t_mol}')
+            print(f'z_t_pro {z_t_pro}')
 
         else:
             # COM modification if protein_pocket not fixed
