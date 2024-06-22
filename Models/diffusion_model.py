@@ -195,10 +195,8 @@ class Conditional_Diffusion_Model(nn.Module):
         protein_pocket['x'] = protein_pocket['x'] / self.norm_values[0]
         protein_pocket['h'] = protein_pocket['h'] / self.norm_values[1]
 
-        print(f'molecule_x {molecule['x']}')
-        print(f'molecule_h {molecule['h']}')
-        print(f'protein_pocket_x {protein_pocket['x']}')
-        print(f'protein_pocket_h {protein_pocket['h']}')
+        print(f'molecule_xh {molecule}')
+        print(f'protein_pocket_xh {protein_pocket}')
 
         # sample t ~ U(0,...,T) for each graph individually
         t_low = 0 if self.train else 1
