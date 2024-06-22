@@ -9,7 +9,7 @@ num_epochs: 1000
 device: 'cuda'
 gpus: 1
 
-batch_size: 64 # 16, 64
+batch_size: 32 # 16, 64
 lr: 5.0e-4
 num_workers: 18
 
