@@ -245,8 +245,12 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
             else:
                 # data is translated to 0, COM noise added and again translated to 0
+                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
+                print('mean', mean)
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
+                print('mean', mean)
+                print('before', xh_pro)
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
                 print(f'xh_mol after mean {xh_mol}')
