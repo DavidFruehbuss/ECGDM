@@ -245,12 +245,8 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
             else:
                 # data is translated to 0, COM noise added and again translated to 0
-                print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
-                print('mean', mean)
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
-                print('mean', mean)
-                print('before', xh_pro)
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
                 print(f'xh_mol after mean {xh_mol}')
@@ -263,7 +259,9 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
             print(f'eps_x_mol {eps_x_mol}')
+            print(f'eps_x_mol.shape {eps_x_mol.shape}')
             print(f'eps_x_pro {eps_x_pro}')
+            print(f'eps_x_pro.shape {eps_x_pro.shape}')
 
             if self.com_old:
                 # old centering approach
