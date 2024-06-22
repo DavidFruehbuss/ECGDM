@@ -179,8 +179,8 @@ class NN_Model(nn.Module):
         '''
 
         idx_joint = torch.cat((molecule_idx, protein_pocket_idx), dim=0)
-        x_mol = z_t_mol[:,:self.x_dim]
-        x_pro = z_t_pro[:,:self.x_dim]
+        x_mol = z_t_mol[:,:self.x_dim].clone()
+        x_pro = z_t_pro[:,:self.x_dim].clone()
 
         # add edges to the graph
         edges = self.get_edges(molecule_idx, protein_pocket_idx, x_mol, x_pro)
@@ -241,8 +241,8 @@ class NN_Model(nn.Module):
         elif self.architecture == 'egnn' or self.architecture == 'gnn':
 
             # encode z_t_mol, z_t_pro (possible need to .clone() the inputs)
-            h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:])
-            h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
+            h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:]).clone()
+            h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:]).clone()
 
             # position_encoding
             if self.position_encoding:
