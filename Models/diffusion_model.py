@@ -141,6 +141,9 @@ class Conditional_Diffusion_Model(nn.Module):
         print(f'epsilon_hat_mol {epsilon_hat_mol}')
         print(f'epsilon_hat_pro {epsilon_hat_pro}')
 
+        print(f'epsilon_hat_mol.shape {epsilon_hat_mol.shape}')
+        print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
+
         # compute alpha, sigma
         alpha_t = self.noise_schedule(t, 'alpha')
         sigma_t = self.noise_schedule(t, 'sigma')
@@ -259,9 +262,7 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
             print(f'eps_x_mol {eps_x_mol}')
-            print(f'eps_x_mol.shape {eps_x_mol.shape}')
             print(f'eps_x_pro {eps_x_pro}')
-            print(f'eps_x_pro.shape {eps_x_pro.shape}')
 
             if self.com_old:
                 # old centering approach
