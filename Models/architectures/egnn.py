@@ -209,7 +209,7 @@ class EGNN(nn.Module):
 
         if sin_embedding:
             self.sin_embedding = SinusoidsEmbeddingNew()
-            edge_feat_nf = self.sin_embedding.dim # * 2 # TODO: is this justified
+            edge_feat_nf = self.sin_embedding.dim * 2 # TODO: it seems to be needed
         else:
             self.sin_embedding = None
             edge_feat_nf = 2
