@@ -205,9 +205,11 @@ class EGNN(nn.Module):
         self.reflection_equiv = reflection_equiv
         # self.edge_sin_attr = edge_sin_attr
 
+        print('sin_embedding', sin_embedding)
+
         if sin_embedding:
             self.sin_embedding = SinusoidsEmbeddingNew()
-            edge_feat_nf = self.sin_embedding.dim * 2
+            edge_feat_nf = self.sin_embedding.dim # * 2 # TODO: is this justified
         else:
             self.sin_embedding = None
             edge_feat_nf = 2
