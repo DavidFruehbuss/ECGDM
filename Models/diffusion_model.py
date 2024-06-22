@@ -120,7 +120,7 @@ class Conditional_Diffusion_Model(nn.Module):
         print(f'protein_pocket {protein_pocket}')
 
         # computing the target
-        mol_target = molecule['x']
+        mol_target = molecule['x'].detach()
         # move to COM-0
         mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
 
