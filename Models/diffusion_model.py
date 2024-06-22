@@ -206,7 +206,10 @@ class Conditional_Diffusion_Model(nn.Module):
         t = torch.randint(t_low, max_T + 1, size=(batch_size, 1), device=device)
 
         ## TODO: Fix t for comparssion
-        t[:,:] = 100.0
+        print('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        print(t.shape)
+        print(t)
+        t[:,:] = 100
 
         # high_noise_training_schedule
         self.high_noise_training_schedule = False
