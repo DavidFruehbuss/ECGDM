@@ -116,8 +116,8 @@ class Conditional_Diffusion_Model(nn.Module):
         else:
             molecule_pos = None
 
-        print(f'Molecule {molecule}')
-        print(f'protein_pocket {protein_pocket}')
+        # print(f'Molecule {molecule}')
+        # print(f'protein_pocket {protein_pocket}')
 
         # computing the target
         mol_target = molecule['x'].detach().clone()
@@ -133,7 +133,7 @@ class Conditional_Diffusion_Model(nn.Module):
         print(f'z_t_pro {z_t_pro}')
         print(f'epsilon_mol {epsilon_mol}')
         print(f'epsilon_pro {epsilon_pro}')
-        print(f't {t}')
+        # print(f't {t}')
 
         # use neural network to predict noise
         epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
@@ -148,8 +148,8 @@ class Conditional_Diffusion_Model(nn.Module):
         alpha_t = self.noise_schedule(t, 'alpha')
         sigma_t = self.noise_schedule(t, 'sigma')
 
-        print(f'alpha_t {alpha_t}')
-        print(f'sigma_t {sigma_t}')
+        # print(f'alpha_t {alpha_t}')
+        # print(f'sigma_t {sigma_t}')
 
         # compute denoised sample
         # original equation
@@ -261,9 +261,6 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
             eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
 
-            print(f'eps_x_mol {eps_x_mol}')
-            print(f'eps_x_pro {eps_x_pro}')
-
             if self.com_old:
                 # old centering approach
                 eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
@@ -298,9 +295,6 @@ class Conditional_Diffusion_Model(nn.Module):
                 mean = scatter_mean(z_t_mol[:,:self.x_dim], molecule['idx'], dim=0)
                 z_t_mol[:,:self.x_dim] = z_t_mol[:,:self.x_dim] - mean[molecule['idx']]
                 z_t_pro[:,:self.x_dim] = z_t_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
-
-            print(f'z_t_mol {z_t_mol}')
-            print(f'z_t_pro {z_t_pro}')
 
         else:
             # COM modification if protein_pocket not fixed
