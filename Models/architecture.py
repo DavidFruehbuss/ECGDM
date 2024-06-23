@@ -297,10 +297,17 @@ class NN_Model(nn.Module):
                 # TODO: check this one in detail; possibly wrong as well !!!
                 protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.zeros_like(protein_pocket_idx))).unsqueeze(1)
 
+                print(f'h_joint {h_joint.shape}')
+                print(f'x_joint {x_joint.shape}')
+                print(f'edges {edges.shape}')
+
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
                                             update_coords_mask=protein_pocket_fixed,
                                             batch_mask=idx_joint, edge_attr=edge_types) # edge_attr=edge_attr
+                
+                print(f'h_new {h_new.shape}')
+                print(f'x_new {x_new.shape}')
                 
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
