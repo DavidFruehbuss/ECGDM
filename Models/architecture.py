@@ -301,6 +301,9 @@ class NN_Model(nn.Module):
                 print(f'x_joint {x_joint.shape}')
                 print(f'edges {edges.shape}')
 
+                print(f'h_joint0 {h_joint[0]}')
+                print(f'x_joint0 {x_joint[0]}')
+
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
                                             update_coords_mask=protein_pocket_fixed,
@@ -308,6 +311,8 @@ class NN_Model(nn.Module):
                 
                 print(f'h_new {h_new.shape}')
                 print(f'x_new {x_new.shape}')
+                print(f'h_new0 {h_new[0]}')
+                print(f'x_new0 {x_new[0]}')
                 
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
@@ -334,6 +339,7 @@ class NN_Model(nn.Module):
         # remove position information (TODO: careful with ponita (pE not added there yet))
         if self.position_encoding:
             # Slice off last dimension which represented postional encoding.
+            print(self.pE_dim)
             h_new = h_new[:, :-self.pE_dim]
                 
         # decode h_new
