@@ -641,10 +641,10 @@ class Conditional_Diffusion_Model(nn.Module):
 
         # TODO: here features get changed! (for peptides need to turn this off somehow)
         if self.features_fixed:
-            molecule_h = molecule['h']
+            molecule_h = molecule['h'].clone().detach()
         else:
             # run moad sampling with only structure diffusion
-            molecule_h = molecule['h']
+            molecule_h = molecule['h'].clone().detach()
             # molecule_h = torch.zeros((protein_pocket['h'].size), device=device)
 
         # combine position and features
@@ -670,10 +670,10 @@ class Conditional_Diffusion_Model(nn.Module):
         print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
 
         # # Sanaty check
-        molecule_xx = molecule['x']
+        molecule_xx = molecule['x'].clone().detach()
         molecule_xx[:,:self.x_dim] = molecule_xx[:,:self.x_dim] - scatter_mean(molecule_xx[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
         xh_t_mol = torch.cat((molecule_xx, molecule_h), dim=1)
-        z_t_pro = xh_pro
+        z_t_pro = xh_pro.clone().detach()
 
         error_mol = scatter_add(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
@@ -798,7 +798,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
             self.sampling_without_noise = False
             if self.sampling_without_noise:
-                xh_mol = mean_mol_s
+                xh_mol = mean_mol_s.clone().detach()
 
             if self.com_old:
                 dumy_variable = 0

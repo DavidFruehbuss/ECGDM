@@ -1,8 +1,8 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/'
-project: 'Structur_prediction_RSMD'
-run_name: 'SP_pmhc8k_egnn_E'
-entity: 'neuro-ai-scientist'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_colab/'
+project: 'Structur_prediction'
+run_name: 'SP_pmhc_egnn_colab'
+entity: 'neuroai-scientist'
 
 # Training
 num_epochs: 1000
@@ -17,7 +17,6 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
-  position_encoding: True
 
 # Dataset
 dataset: 'pmhc_8K'
