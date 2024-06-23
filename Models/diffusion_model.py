@@ -124,25 +124,25 @@ class Conditional_Diffusion_Model(nn.Module):
         # move to COM-0
         mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
 
-        print(f'mol_target {mol_target}')
+        # print(f'mol_target {mol_target}')
 
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
-        print(f'z_t_mol {z_t_mol}')
-        print(f'z_t_pro {z_t_pro}')
-        print(f'epsilon_mol {epsilon_mol}')
-        print(f'epsilon_pro {epsilon_pro}')
+        # print(f'z_t_mol {z_t_mol}')
+        # print(f'z_t_pro {z_t_pro}')
+        # print(f'epsilon_mol {epsilon_mol}')
+        # print(f'epsilon_pro {epsilon_pro}')
         # print(f't {t}')
 
         # use neural network to predict noise
         epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
-        print(f'epsilon_hat_mol {epsilon_hat_mol}')
-        print(f'epsilon_hat_pro {epsilon_hat_pro}')
+        # print(f'epsilon_hat_mol {epsilon_hat_mol}')
+        # print(f'epsilon_hat_pro {epsilon_hat_pro}')
 
-        print(f'epsilon_hat_mol.shape {epsilon_hat_mol.shape}')
-        print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
+        # print(f'epsilon_hat_mol.shape {epsilon_hat_mol.shape}')
+        # print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
 
         # compute alpha, sigma
         alpha_t = self.noise_schedule(t, 'alpha')
@@ -155,7 +155,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # original equation
         z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
 
-        print(f'z_data_hat {z_data_hat}')
+        # print(f'z_data_hat {z_data_hat}')
 
         # above is revers of this equation
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
@@ -198,8 +198,8 @@ class Conditional_Diffusion_Model(nn.Module):
         protein_pocket['x'] = protein_pocket['x'] / self.norm_values[0]
         protein_pocket['h'] = protein_pocket['h'] / self.norm_values[1]
 
-        print(f'molecule_xh {molecule}')
-        print(f'protein_pocket_xh {protein_pocket}')
+        # print(f'molecule_xh {molecule}')
+        # print(f'protein_pocket_xh {protein_pocket}')
 
         # sample t ~ U(0,...,T) for each graph individually
         t_low = 0 if self.train else 1
@@ -252,8 +252,8 @@ class Conditional_Diffusion_Model(nn.Module):
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - mean[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - mean[protein_pocket['idx']]
 
-                print(f'xh_mol after mean {xh_mol}')
-                print(f'xh_pro after mean {xh_pro}')
+                # print(f'xh_mol after mean {xh_mol}')
+                # print(f'xh_pro after mean {xh_pro}')
 
             # compute noised sample z_t
             # for x cord. we mean center the normal noise for each graph
