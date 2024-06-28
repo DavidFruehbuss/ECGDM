@@ -292,6 +292,7 @@ class EGNN(nn.Module):
         sin_encoding=False,
         normalization_factor=100,
         aggregation_method="sum",
+        reflection_equiv=None,
     ):
         super(EGNN, self).__init__()
         if out_node_nf is None:
@@ -303,6 +304,7 @@ class EGNN(nn.Module):
         self.norm_diff = norm_diff
         self.normalization_factor = normalization_factor
         self.aggregation_method = aggregation_method
+        self.reflection_equiv = reflection_equiv
 
         if sin_embedding:
             self.sin_embedding = SinusoidsEmbeddingNew()
