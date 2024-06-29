@@ -441,7 +441,7 @@ class SinusoidsEmbeddingNew(nn.Module):
             2 * math.pi * div_factor ** torch.arange(self.n_frequencies) / max_res
         )
         self.dim = len(self.frequencies) * 2
-        print('DIM', self.dim)
+        # print('DIM', self.dim)
 
     def forward(self, x):
         x = torch.sqrt(x + 1e-8)
