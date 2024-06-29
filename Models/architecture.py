@@ -385,6 +385,12 @@ class NN_Model(nn.Module):
             adj_ligand = adj_ligand & (torch.cdist(x_ligand, x_ligand) <= self.edge_cutoff_l)
 
         if self.edge_cutoff_p is not None:
+
+            print(x_pocket.size())
+            print(adj_pocket.size())
+            print(torch.cuda.memory_allocated())
+            print(torch.cuda.memory_reserved())
+
             adj_pocket = adj_pocket & (torch.cdist(x_pocket, x_pocket) <= self.edge_cutoff_p)
 
         if self.edge_cutoff_i is not None:
