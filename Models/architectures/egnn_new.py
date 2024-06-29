@@ -289,7 +289,7 @@ class EGNN(nn.Module):
         norm_constant=1,
         inv_sublayers=2,
         sin_embedding=False,
-        sin_encoding=False,
+        sin_encoding=True,
         normalization_factor=100,
         aggregation_method="sum",
         reflection_equiv=None,
