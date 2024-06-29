@@ -5,8 +5,8 @@ from torch_scatter import scatter_mean
 
 from torch_geometric.data import Data, Batch
 
-# from Models.architectures.egnn import EGNN, GNN
-from Models.architectures.egnn_new import EGNN, GNN
+from Models.architectures.egnn import EGNN, GNN
+# from Models.architectures.egnn_new import EGNN, GNN
 from Models.architectures.ponita.models.ponita import Ponita
 from Models.positional_encoding import sin_pE
 

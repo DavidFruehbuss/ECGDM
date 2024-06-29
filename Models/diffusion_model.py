@@ -885,6 +885,8 @@ class Conditional_Diffusion_Model(nn.Module):
     
     def safe_pdbs(self, pos, molecule, run_id, time_step):
 
+        return
+
         if not self.features_fixed:
             # idicates ligand (not peptide) dataset
             return
