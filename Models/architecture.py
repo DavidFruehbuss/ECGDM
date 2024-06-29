@@ -273,6 +273,10 @@ class NN_Model(nn.Module):
             else:
                 edge_types = None
 
+            print('edges', edges.size())
+            print('edge_attr', edge_types.size())
+            print('edge_attr_0', edge_types[0])
+
             #######################################################################
             # positional edge features (Siem)
             # if self.edge_sin_attr:
