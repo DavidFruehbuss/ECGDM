@@ -349,6 +349,7 @@ class EGNN(nn.Module):
         node_mask=None,
         edge_mask=None,
         update_coords_mask=None,
+        batch_mask=None,
         edge_attr=None,
     ):
         # Edit Emiel: Remove velocity as input
