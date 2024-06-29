@@ -129,20 +129,20 @@ class Conditional_Diffusion_Model(nn.Module):
         # compute noised sample
         z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
 
-        # print(f'z_t_mol {z_t_mol}')
-        # print(f'z_t_pro {z_t_pro}')
-        # print(f'epsilon_mol {epsilon_mol}')
-        # print(f'epsilon_pro {epsilon_pro}')
+        print(f'z_t_mol {z_t_mol}')
+        print(f'z_t_pro {z_t_pro}')
+        print(f'epsilon_mol {epsilon_mol}')
+        print(f'epsilon_pro {epsilon_pro}')
         # print(f't {t}')
 
         # use neural network to predict noise
         epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
-        # print(f'epsilon_hat_mol {epsilon_hat_mol}')
-        # print(f'epsilon_hat_pro {epsilon_hat_pro}')
+        print(f'epsilon_hat_mol {epsilon_hat_mol}')
+        print(f'epsilon_hat_pro {epsilon_hat_pro}')
 
-        # print(f'epsilon_hat_mol.shape {epsilon_hat_mol.shape}')
-        # print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
+        print(f'epsilon_hat_mol.shape {epsilon_hat_mol.shape}')
+        print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
 
         # compute alpha, sigma
         alpha_t = self.noise_schedule(t, 'alpha')
@@ -155,7 +155,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # original equation
         z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
 
-        # print(f'z_data_hat {z_data_hat}')
+        print(f'z_data_hat {z_data_hat}')
 
         # above is revers of this equation
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
