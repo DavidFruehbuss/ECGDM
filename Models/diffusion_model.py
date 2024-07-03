@@ -758,6 +758,8 @@ class Conditional_Diffusion_Model(nn.Module):
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,max_T)):
 
+            if s > max_T-5: break
+
             if s % 100 == 0 or s > 990:
                 self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
 
