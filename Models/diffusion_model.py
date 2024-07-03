@@ -637,6 +637,18 @@ class Conditional_Diffusion_Model(nn.Module):
         # start with random peptide position (target hidden)
         # mean=COM, sigma=1, and sample epsioln
         rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device) * self.noise_scaling
+
+        rand_eps_x = torch.tensor([[-0.7658,  1.9125, -0.5809],
+            [-0.2575, -2.7375, -0.0131],
+            [ 0.8797,  0.9506,  1.2172],
+            [ 0.6008,  0.4653,  0.0586],
+            [-0.7670, -1.9028, -0.3536],
+            [ 1.0566,  0.7744, -0.8515],
+            [-0.3850,  0.2018,  1.4252],
+            [-0.3515, -0.5724,  1.0689],
+            [-0.0103,  0.9080, -1.9709]], device='cuda:0')
+
+
         molecule_x = protein_pocket_com_before[molecule['idx']] + rand_eps_x
 
         # TODO: here features get changed! (for peptides need to turn this off somehow)
