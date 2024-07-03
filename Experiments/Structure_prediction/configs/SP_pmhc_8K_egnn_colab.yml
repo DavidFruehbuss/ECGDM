@@ -56,7 +56,7 @@ network_params:
 # Eval
 checkpoint: '/content/drive/MyDrive/pmhc/best-model-epoch=epoch=976.ckpt' 
 num_samples: 1
-sample_batch_size: 10 # 10
+sample_batch_size: 1 # 10
 sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_H8_high_BS/samples'
 
 
