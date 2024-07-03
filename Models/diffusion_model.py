@@ -696,44 +696,44 @@ class Conditional_Diffusion_Model(nn.Module):
         else:
             TS = [1, 2, 10, 25, 50, 100, 200, 300, 400, 450, 498]
 
-        for ts in TS:
+        # for ts in TS:
 
-            t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
-            # normalize t
-            t_array = t_array / self.T
-            alpha_t = self.noise_schedule(t_array, 'alpha')
-            sigma_t = self.noise_schedule(t_array, 'sigma')
+        #     t_array = torch.randint(ts, ts + 1, size=(num_samples, 1), device=device)
+        #     # normalize t
+        #     t_array = t_array / self.T
+        #     alpha_t = self.noise_schedule(t_array, 'alpha')
+        #     sigma_t = self.noise_schedule(t_array, 'sigma')
 
-            z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
+        #     z_t_mol = alpha_t[molecule['idx']] * xh_t_mol + sigma_t[molecule['idx']] * epsilon_mol
 
-            self.safe_pdbs(z_t_mol, molecule, run_id, time_step=f'N_{ts}')
+        #     self.safe_pdbs(z_t_mol, molecule, run_id, time_step=f'N_{ts}')
 
-            # use neural network to predict noise
-            epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t_array, molecule['idx'], protein_pocket['idx'], molecule_pos)
+        #     # use neural network to predict noise
+        #     epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t_array, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
-            # compute denoised sample
-            # original equation
-            z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
-            z_data_hat_2 = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_mol
+        #     # compute denoised sample
+        #     # original equation
+        #     z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+        #     z_data_hat_2 = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_mol
 
-            # expanend_fraction = (sigma_t / alpha_t)[molecule['idx']]
-            # print(f'sigma {sigma_t.shape}')
-            # print(f'alpha {alpha_t.shape}')
-            # print(f'sigma/alpha {(sigma_t / alpha_t).shape}')
-            # print(f'alpha[mol_idx] {expanend_fraction.shape}')
+        #     # expanend_fraction = (sigma_t / alpha_t)[molecule['idx']]
+        #     # print(f'sigma {sigma_t.shape}')
+        #     # print(f'alpha {alpha_t.shape}')
+        #     # print(f'sigma/alpha {(sigma_t / alpha_t).shape}')
+        #     # print(f'alpha[mol_idx] {expanend_fraction.shape}')
 
-            error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
-            rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-            print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
+        #     error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        #     rmse = torch.sqrt(error_mol / (3 * molecule['size']))
+        #     print(f'Sanity Check 2 (normal) {rmse.mean(0)}')
 
-            error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1), molecule['idx'], dim=0)
-            rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-            print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
+        #     error_mol = scatter_add(torch.sum((molecule_xx - z_data_hat_2[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        #     rmse = torch.sqrt(error_mol / (3 * molecule['size']))
+        #     print(f'Sanity Check 3 (true noise) {rmse.mean(0)}')
 
-            self.safe_pdbs(z_data_hat, molecule, run_id, time_step=f'DN{ts}')
+        #     self.safe_pdbs(z_data_hat, molecule, run_id, time_step=f'DN{ts}')
 
-        # Visualize true peptide pmhc
-        self.safe_pdbs(z_data_hat_2, molecule, run_id, time_step=f'T{ts}')
+        # # Visualize true peptide pmhc
+        # self.safe_pdbs(z_data_hat_2, molecule, run_id, time_step=f'T{ts}')
 
         max_T = self.T
 
