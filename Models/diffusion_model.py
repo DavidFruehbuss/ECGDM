@@ -793,6 +793,15 @@ class Conditional_Diffusion_Model(nn.Module):
             sigma_t_given_s = torch.sqrt(1 - (alpha_t_given_s)**2 )
             sigma2_t_given_s = sigma_t_given_s**2
 
+            print('...................................')
+            print(f'sigma_s {sigma_s}')
+            print(f'sigma_t {sigma_t}')   
+            print(f'alpha_t_given_s {alpha_t_given_s}')
+            print(f'sigma2_t_given_s {sigma2_t_given_s}')
+            print(f'alpha_t_given_s {alpha_t_given_s}')
+            print(f'sigma_t {sigma_t}')
+            print('...................................')
+
             # use neural network to predict noise
             epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
 
@@ -814,7 +823,7 @@ class Conditional_Diffusion_Model(nn.Module):
             print(f'sigma_mol_s {sigma_mol_s}')
             print(f'eps_mol_random {eps_mol_random}')
 
-            xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
+            xh_mol[:,3] = mean_mol_s[:,3] + sigma_mol_s[molecule['idx']] * eps_mol_random[:,:3]
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
             self.sampling_without_noise = False
