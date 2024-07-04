@@ -330,6 +330,8 @@ class NN_Model(nn.Module):
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
 
+                print(f'vel {displacement_vec}')
+
             elif self.architecture == 'gnn':
 
                 # GNN
