@@ -638,16 +638,15 @@ class Conditional_Diffusion_Model(nn.Module):
         # mean=COM, sigma=1, and sample epsioln
         rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device) * self.noise_scaling
 
-        rand_eps_x = torch.tensor([[-0.7658,  1.9125, -0.5809],
-            [-0.2575, -2.7375, -0.0131],
-            [ 0.8797,  0.9506,  1.2172],
-            [ 0.6008,  0.4653,  0.0586],
-            [-0.7670, -1.9028, -0.3536],
-            [ 1.0566,  0.7744, -0.8515],
-            [-0.3850,  0.2018,  1.4252],
-            [-0.3515, -0.5724,  1.0689],
-            [-0.0103,  0.9080, -1.9709]], device='cuda:0')
-
+        rand_eps_x = torch.tensor([[ 0.2907,  0.2309,  1.2472],
+                                    [ 0.4251,  0.1150, -1.0757],
+                                    [-0.4606,  0.9788, -0.1525],
+                                    [-0.2532, -0.6566,  0.1485],
+                                    [ 0.2235,  0.0785,  0.6607],
+                                    [-0.2066, -0.2605,  0.2740],
+                                    [-0.7848, -1.1916, -0.6044],
+                                    [ 1.4707,  0.6776, -1.0164],
+                                    [-0.7048,  0.0280,  0.5186]], device='cuda:0')
 
         molecule_x = protein_pocket_com_before[molecule['idx']] + rand_eps_x
 
@@ -691,17 +690,17 @@ class Conditional_Diffusion_Model(nn.Module):
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
         print(f'Sanity check 1 (self): {rmse.mean(0)}')
 
-        # epsilon for the sanity checks
-        eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
+        # # epsilon for the sanity checks
+        # eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
 
-        if self.com_old:
-            # old centering approach
-            eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
+        # if self.com_old:
+        #     # old centering approach
+        #     eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
 
-        if self.features_fixed:
-            eps_h_mol = torch.zeros(size=(len(xh_mol), self.num_atoms), device=device)
+        # if self.features_fixed:
+        #     eps_h_mol = torch.zeros(size=(len(xh_mol), self.num_atoms), device=device)
 
-        epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
+        # epsilon_mol = torch.cat((eps_x_mol, eps_h_mol), dim=1)
 
         if self.T == 1000:
             TS = [1, 50, 100, 200, 400, 500, 700, 800, 900, 950, 998]
@@ -765,6 +764,9 @@ class Conditional_Diffusion_Model(nn.Module):
         # xh_mol = z_t_mol
         # max_T = ts
         ##################
+
+        print(f'x_mol_before {xh_mol}')
+        print(f'x_pro_before {xh_pro}')
 
 
         # Iterativly denoise stepwise for t = T,...,1
