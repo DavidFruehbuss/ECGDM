@@ -809,6 +809,11 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_mol_random = torch.randn(size=(len(xh_mol), self.x_dim + self.num_atoms), device=device) * self.noise_scaling # Here noise scaling might not be needed
             eps_mol_random = eps_mol_random - scatter_mean(eps_mol_random, molecule['idx'], dim=0)[molecule['idx']]
             # the line bellow is where we would add the gaudi guidance (-> compute backbone and statistical potentials)
+
+            print(f'mean_mol_s {mean_mol_s}')
+            print(f'sigma_mol_s {sigma_mol_s}')
+            print(f'eps_mol_random {eps_mol_random}')
+
             xh_mol = mean_mol_s + sigma_mol_s[molecule['idx']] * eps_mol_random
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
