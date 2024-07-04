@@ -772,7 +772,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,max_T)):
 
-            if s < max_T-2: raise NameError
+            if s < max_T-4: raise NameError
 
             if s % 100 == 0 or s > 990:
                 self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
@@ -823,7 +823,7 @@ class Conditional_Diffusion_Model(nn.Module):
             print(f'sigma_mol_s {sigma_mol_s}')
             print(f'eps_mol_random {eps_mol_random}')
 
-            xh_mol[:,3] = mean_mol_s[:,3] + sigma_mol_s[molecule['idx']] * eps_mol_random[:,:3]
+            xh_mol[:,:3] = mean_mol_s[:,:3] + sigma_mol_s[molecule['idx']] * eps_mol_random[:,:3]
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
 
             self.sampling_without_noise = False
