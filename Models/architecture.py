@@ -183,8 +183,8 @@ class NN_Model(nn.Module):
         x_mol = z_t_mol[:,:self.x_dim].clone()
         x_pro = z_t_pro[:,:self.x_dim].clone()
 
-        print(f'x_mol {x_mol}')
-        print(f'x_pro {x_pro}')
+        # print(f'x_mol {x_mol}')
+        # print(f'x_pro {x_pro}')
 
         # add edges to the graph
         edges = self.get_edges(molecule_idx, protein_pocket_idx, x_mol, x_pro)
@@ -248,8 +248,8 @@ class NN_Model(nn.Module):
             h_mol = self.atom_encoder(z_t_mol[:,self.x_dim:]).clone()
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:]).clone()
 
-            print(f'h_mol {h_mol}')
-            print(f'h_pro {h_pro}')
+            # print(f'h_mol {h_mol}')
+            # print(f'h_pro {h_pro}')
 
             # position_encoding
             if self.position_encoding:
@@ -258,7 +258,7 @@ class NN_Model(nn.Module):
                 h_mol = torch.cat([h_mol, pE], dim=1)
                 h_pro = torch.cat([h_pro, torch.zeros((h_pro.shape[0], self.pE_dim), device=h_pro.device)], dim=1)
 
-            print(f'h_molpE {h_mol}')
+            # print(f'h_molpE {h_mol}')
 
             # combine molecule and protein in joint space
             x_joint = torch.cat((z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim]), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
@@ -281,9 +281,9 @@ class NN_Model(nn.Module):
             else:
                 edge_types = None
 
-            print('edges', edges.size())
-            print('edge_attr', edge_types.size())
-            print('edge_attr_0', edge_types[0])
+            # print('edges', edges.size())
+            # print('edge_attr', edge_types.size())
+            # print('edge_attr_0', edge_types[0])
 
             #######################################################################
             # positional edge features (Siem)
@@ -310,27 +310,27 @@ class NN_Model(nn.Module):
                 # TODO: check this one in detail; possibly wrong as well !!!
                 protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.zeros_like(protein_pocket_idx))).unsqueeze(1)
 
-                print(f'h_joint {h_joint.shape}')
-                print(f'x_joint {x_joint.shape}')
-                print(f'edges {edges.shape}')
+                # print(f'h_joint {h_joint.shape}')
+                # print(f'x_joint {x_joint.shape}')
+                # print(f'edges {edges.shape}')
 
-                print(f'h_joint0 {h_joint[0]}')
-                print(f'x_joint0 {x_joint[0]}')
+                # print(f'h_joint0 {h_joint[0]}')
+                # print(f'x_joint0 {x_joint[0]}')
 
                 # neural net forward pass
                 h_new, x_new = self.egnn(h_joint, x_joint, edges,
                                             update_coords_mask=protein_pocket_fixed,
                                             batch_mask=idx_joint, edge_attr=edge_types) # edge_attr=edge_attr
                 
-                print(f'h_new {h_new.shape}')
-                print(f'x_new {x_new.shape}')
-                print(f'h_new0 {h_new[0]}')
-                print(f'x_new0 {x_new[0]}')
+                # print(f'h_new {h_new.shape}')
+                # print(f'x_new {x_new.shape}')
+                # print(f'h_new0 {h_new[0]}')
+                # print(f'x_new0 {x_new[0]}')
                 
                 # calculate displacement vectors
                 displacement_vec = (x_new - x_joint)
 
-                print(f'vel {displacement_vec}')
+                # print(f'vel {displacement_vec}')
 
             elif self.architecture == 'gnn':
 
@@ -400,10 +400,10 @@ class NN_Model(nn.Module):
 
         if self.edge_cutoff_p is not None:
 
-            print(x_pocket.size())
-            print(adj_pocket.size())
-            print(torch.cuda.memory_allocated())
-            print(torch.cuda.memory_reserved())
+            # print(x_pocket.size())
+            # print(adj_pocket.size())
+            # print(torch.cuda.memory_allocated())
+            # print(torch.cuda.memory_reserved())
 
             adj_pocket = adj_pocket & (torch.cdist(x_pocket, x_pocket) <= self.edge_cutoff_p)
 
