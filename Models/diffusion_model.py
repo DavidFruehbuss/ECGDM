@@ -283,7 +283,8 @@ class Conditional_Diffusion_Model(nn.Module):
             # alpha_t: [16,1] -> [300,13] or [333,23] by indexing and broadcasting
             # TODO: alpha value confuses me, doesn't this change the size of the complex (unstable variance)
             # TODO:1 - instead of + ????
-            z_t_mol = alpha_t[molecule['idx']] * xh_mol[:, :self.x_dim] + sigma_t[molecule['idx']] * eps_x_mol
+            z_t_mol_x = alpha_t[molecule['idx']] * xh_mol[:, :self.x_dim] + sigma_t[molecule['idx']] * eps_x_mol
+            z_t_mol = torch.cat((z_t_mol_x, xh_mol[:,self.x_dim:]), dim=1)
             # TODO: massive change [alternative is to update pocket in sampling as well]
             z_t_pro = xh_pro.clone().detach()
             # z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro + sigma_t[protein_pocket['idx']] * epsilon_pro
