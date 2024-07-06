@@ -120,14 +120,14 @@ class Conditional_Diffusion_Model(nn.Module):
         # print(f'protein_pocket {protein_pocket}')
 
         # computing the target
-        mol_target = molecule['x'].detach().clone()
+        # mol_target = molecule['x'].detach().clone()
         # move to COM-0
-        mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
+        # mol_target[:,:self.x_dim] = mol_target[:,:self.x_dim] - scatter_mean(mol_target[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
 
         # print(f'mol_target {mol_target}')
 
         # compute noised sample
-        z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t = self.noise_process(z_data)
+        z_t_mol, z_t_pro, eps_x_mol, epsilon_pro, t = self.noise_process(z_data)
 
         # print(f'z_t_mol {z_t_mol}')
         # print(f'z_t_pro {z_t_pro}')
@@ -145,15 +145,15 @@ class Conditional_Diffusion_Model(nn.Module):
         # print(f'epsilon_hat_pro.shape {epsilon_hat_pro.shape}')
 
         # compute alpha, sigma
-        alpha_t = self.noise_schedule(t, 'alpha')
-        sigma_t = self.noise_schedule(t, 'sigma')
+        # alpha_t = self.noise_schedule(t, 'alpha')
+        # sigma_t = self.noise_schedule(t, 'sigma')
 
         # print(f'alpha_t {alpha_t}')
         # print(f'sigma_t {sigma_t}')
 
         # compute denoised sample
         # original equation
-        z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
+        # z_data_hat = (1 / alpha_t)[molecule['idx']] * z_t_mol - (sigma_t / alpha_t)[molecule['idx']] * epsilon_hat_mol
 
         # print(f'z_data_hat {z_data_hat}')
 
@@ -161,23 +161,23 @@ class Conditional_Diffusion_Model(nn.Module):
         # z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
 
         # Log sampling progress to wandb
-        error_mol = scatter_add(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
-        rmse = torch.sqrt(error_mol / (3 * molecule['size']))
+        # error_mol = scatter_add(torch.sum((mol_target - z_data_hat[:,:3])**2, dim=-1), molecule['idx'], dim=0)
+        # rmse = torch.sqrt(error_mol / (3 * molecule['size']))
 
 
         if self.training:
 
-            loss, info = self.train_loss(molecule, z_t_mol, epsilon_mol, 
+            loss, info = self.train_loss(molecule, z_t_mol, eps_x_mol, 
                                          epsilon_hat_mol,protein_pocket, 
                                          z_t_pro, epsilon_pro, epsilon_hat_pro, t)
 
         else: 
 
-            loss, info = self.validation_loss(z_data, molecule, z_t_mol, epsilon_mol, 
+            loss, info = self.validation_loss(z_data, molecule, z_t_mol, eps_x_mol, 
                                          epsilon_hat_mol,protein_pocket, 
                                          z_t_pro, epsilon_pro, epsilon_hat_pro, t)
             
-        info['rmse'] = rmse.mean(0)
+        # info['rmse'] = rmse.mean(0)
 
         return loss.mean(0), info
 
@@ -209,7 +209,7 @@ class Conditional_Diffusion_Model(nn.Module):
         t = torch.randint(t_low, max_T + 1, size=(batch_size, 1), device=device)
 
         ## TODO: Fix t for comparssion
-        t[:,:] = 100
+        # t[:,:] = 100
 
         # high_noise_training_schedule
         self.high_noise_training_schedule = False
@@ -283,9 +283,9 @@ class Conditional_Diffusion_Model(nn.Module):
             # alpha_t: [16,1] -> [300,13] or [333,23] by indexing and broadcasting
             # TODO: alpha value confuses me, doesn't this change the size of the complex (unstable variance)
             # TODO:1 - instead of + ????
-            z_t_mol = alpha_t[molecule['idx']] * xh_mol + sigma_t[molecule['idx']] * epsilon_mol
+            z_t_mol = alpha_t[molecule['idx']] * xh_mol[:, :self.x_dim] + sigma_t[molecule['idx']] * eps_x_mol
             # TODO: massive change [alternative is to update pocket in sampling as well]
-            z_t_pro = xh_pro
+            z_t_pro = xh_pro.clone().detach()
             # z_t_pro = alpha_t[protein_pocket['idx']] * xh_pro + sigma_t[protein_pocket['idx']] * epsilon_pro
 
             if self.com_old:
@@ -302,7 +302,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # data_position stays and noise is translated
             raise NotImplementedError
 
-        return z_t_mol, z_t_pro, epsilon_mol, epsilon_pro, t
+        return z_t_mol, z_t_pro, eps_x_mol, epsilon_pro, t
     
     def train_loss(
             self, molecule, z_t_mol, epsilon_mol, epsilon_hat_mol,
