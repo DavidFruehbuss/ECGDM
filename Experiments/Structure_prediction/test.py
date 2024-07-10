@@ -44,9 +44,6 @@ if __name__ == "__main__":
         else:
             args_dict[key] = value
 
-    # wandb.init(project=args.project, entity=args.entity, name=args.run_name,)
-    _wandb = None
-
     num_samples = args.num_samples
     sample_batch_size = args.sample_batch_size
     sample_savepath = args.sample_savepath
@@ -107,7 +104,7 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, _wandb, args.run_name)
+        xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, args.sampling_without_noise, args.run_name)
 
         # Safe resulting structures
         size_tuple = tuple(molecule['size'].tolist())
