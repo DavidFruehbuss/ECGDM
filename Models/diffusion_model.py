@@ -615,6 +615,10 @@ class Conditional_Diffusion_Model(nn.Module):
             molecule_pos = None
         num_samples = len(molecule['size'])
 
+        # Safe the correct structure pdb
+        target_pMHC = torch.cat((molecule['x'], molecule['h']), dim=1)
+        self.safe_pdbs(target_pMHC, molecule, run_id, time_step='target')
+
         # Record protein_pocket center of mass before
         protein_pocket_com_before = scatter_mean(protein_pocket['x'], protein_pocket['idx'], dim=0)
 
@@ -639,15 +643,15 @@ class Conditional_Diffusion_Model(nn.Module):
         # mean=COM, sigma=1, and sample epsioln
         rand_eps_x = torch.randn((len(molecule['x']), self.x_dim), device=device) * self.noise_scaling
 
-        rand_eps_x = torch.tensor([[ 0.2907,  0.2309,  1.2472],
-                                    [ 0.4251,  0.1150, -1.0757],
-                                    [-0.4606,  0.9788, -0.1525],
-                                    [-0.2532, -0.6566,  0.1485],
-                                    [ 0.2235,  0.0785,  0.6607],
-                                    [-0.2066, -0.2605,  0.2740],
-                                    [-0.7848, -1.1916, -0.6044],
-                                    [ 1.4707,  0.6776, -1.0164],
-                                    [-0.7048,  0.0280,  0.5186]], device='cuda:0')
+        # rand_eps_x = torch.tensor([[ 0.2907,  0.2309,  1.2472],
+        #                             [ 0.4251,  0.1150, -1.0757],
+        #                             [-0.4606,  0.9788, -0.1525],
+        #                             [-0.2532, -0.6566,  0.1485],
+        #                             [ 0.2235,  0.0785,  0.6607],
+        #                             [-0.2066, -0.2605,  0.2740],
+        #                             [-0.7848, -1.1916, -0.6044],
+        #                             [ 1.4707,  0.6776, -1.0164],
+        #                             [-0.7048,  0.0280,  0.5186]], device='cuda:0')
 
         molecule_x = protein_pocket_com_before[molecule['idx']] + rand_eps_x
 
@@ -766,14 +770,14 @@ class Conditional_Diffusion_Model(nn.Module):
         # max_T = ts
         ##################
 
-        print(f'x_mol_before {xh_mol}')
-        print(f'x_pro_before {xh_pro}')
+        # print(f'x_mol_before {xh_mol}')
+        # print(f'x_pro_before {xh_pro}')
 
 
         # Iterativly denoise stepwise for t = T,...,1
         for s in reversed(range(0,max_T)):
 
-            if s < max_T-4: raise NameError
+            # if s < max_T-4: raise NameError
 
             if s % 100 == 0 or s > 990:
                 self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
@@ -794,14 +798,14 @@ class Conditional_Diffusion_Model(nn.Module):
             sigma_t_given_s = torch.sqrt(1 - (alpha_t_given_s)**2 )
             sigma2_t_given_s = sigma_t_given_s**2
 
-            print('...................................')
-            print(f'sigma_s {sigma_s}')
-            print(f'sigma_t {sigma_t}')   
-            print(f'alpha_t_given_s {alpha_t_given_s}')
-            print(f'sigma2_t_given_s {sigma2_t_given_s}')
-            print(f'alpha_t_given_s {alpha_t_given_s}')
-            print(f'sigma_t {sigma_t}')
-            print('...................................')
+            # print('...................................')
+            # print(f'sigma_s {sigma_s}')
+            # print(f'sigma_t {sigma_t}')   
+            # print(f'alpha_t_given_s {alpha_t_given_s}')
+            # print(f'sigma2_t_given_s {sigma2_t_given_s}')
+            # print(f'alpha_t_given_s {alpha_t_given_s}')
+            # print(f'sigma_t {sigma_t}')
+            # print('...................................')
 
             # use neural network to predict noise
             epsilon_hat_mol, _ = self.neural_net(xh_mol, xh_pro, t_array_norm, molecule['idx'], protein_pocket['idx'], molecule_pos)
@@ -820,9 +824,9 @@ class Conditional_Diffusion_Model(nn.Module):
             eps_mol_random = eps_mol_random - scatter_mean(eps_mol_random, molecule['idx'], dim=0)[molecule['idx']]
             # the line bellow is where we would add the gaudi guidance (-> compute backbone and statistical potentials)
 
-            print(f'mean_mol_s {mean_mol_s}')
-            print(f'sigma_mol_s {sigma_mol_s}')
-            print(f'eps_mol_random {eps_mol_random}')
+            # print(f'mean_mol_s {mean_mol_s}')
+            # print(f'sigma_mol_s {sigma_mol_s}')
+            # print(f'eps_mol_random {eps_mol_random}')
 
             xh_mol[:,:3] = mean_mol_s[:,:3] + sigma_mol_s[molecule['idx']] * eps_mol_random[:,:3]
             xh_pro = xh_pro.detach().clone() # for safety (probally not necessary)
@@ -915,8 +919,6 @@ class Conditional_Diffusion_Model(nn.Module):
         return sampled_structures
     
     def safe_pdbs(self, pos, molecule, run_id, time_step):
-
-        return
 
         if not self.features_fixed:
             # idicates ligand (not peptide) dataset
