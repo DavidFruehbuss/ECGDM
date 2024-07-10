@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_check2/'
+logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_check1/'
 project: 'Structur_prediction'
-run_name: 'SP_pmhc_egnn_check2'
+run_name: 'SP_pmhc_egnn_check1'
 entity: 'neuroai-scientist'
 
 # Training
@@ -17,7 +17,7 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
-
+  position_encoding: True
 
 # Dataset
 dataset: 'pmhc_8K'
@@ -30,12 +30,6 @@ dataset_params:
 generative_model: 'conditional_diffusion'
 generative_model_params:
   timesteps: 1000
-  position_encoding: True
-  position_encoding_dim: 10
-  com_handling: 'peptide' # 'protein' 'both'
-  noise_scaling: null
-  high_noise_training: False
-
 
 architecture: 'egnn'
 network_params: 
@@ -60,11 +54,10 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/checkpoints/best-model-epoch=epoch=420.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs/pmhc_egnn_compare5/checkpoints/best-model-epoch=epoch=847.ckpt' 
 num_samples: 1
 sample_batch_size: 10 # 10
-sampling_without_noise: False
-sample_savepath: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs/pmhc_egnn_compare5/samples'
 
 
 
