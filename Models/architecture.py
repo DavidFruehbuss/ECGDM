@@ -72,6 +72,9 @@ class NN_Model(nn.Module):
 
             self.residue_decoder = nn.Linear(self.joint_dim, num_residues)
 
+            if self.position_encoding:
+                self.joint_dim += self.pE_dim
+
             if self.conditioned_on_time:
                 self.joint_dim += 1
 
@@ -133,11 +136,11 @@ class NN_Model(nn.Module):
                 nn.Linear(2 * num_residues, num_residues)
             )
 
+            if self.position_encoding:
+                self.joint_dim += self.pE_dim
+
             if self.conditioned_on_time:
                 self.joint_dim += 1
-
-            if self.position_encoding:
-                self.joint_dim += self.pE_dim # 10 pE dims
 
             if architecture == 'egnn':
 
@@ -194,6 +197,12 @@ class NN_Model(nn.Module):
             h_pro = self.residue_encoder(z_t_pro[:,self.x_dim:])
             # combine molecule and protein in joint space for displacment_vector calculation
             x_joint = torch.cat((z_t_mol[:,:self.x_dim], z_t_pro[:,:self.x_dim]), dim=0) # [batch_node_dim_mol + batch_node_dim_pro, 3]
+
+            # position_encoding
+            if self.position_encoding:
+                pE = sin_pE(molecule_pos, self.pE_dim)
+                h_mol = torch.cat([h_mol, pE], dim=1)
+                h_pro = torch.cat([h_pro, torch.zeros((h_pro.shape[0], self.pE_dim), device=h_pro.device)], dim=1)
 
             # (2) add time conditioning
             if self.conditioned_on_time:

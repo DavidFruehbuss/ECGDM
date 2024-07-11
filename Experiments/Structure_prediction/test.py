@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     start_time_total = time.time()
 
-    for i in range(0, 2, sample_batch_size):
+    for i in range(0, len(test_dataset), sample_batch_size):
 
         start_time = time.time()
 
@@ -131,7 +131,7 @@ if __name__ == "__main__":
         saved_samples['rmse_mean'] += [rmse_sample_mean[j] for j in range(sample_batch_size)]
         saved_samples['rmse_best'] += [rmse_sample_best[j] for j in range(sample_batch_size)]
 
-        print(f'Time: {end_time - start_time}')
+        # print(f'Time: {end_time - start_time}')
 
     end_time_total = time.time()
     time_total = end_time_total - start_time_total

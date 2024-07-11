@@ -1,11 +1,11 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs/pmhc_egnn_check2/'
-project: 'Structur_prediction'
-run_name: 'SP_pmhc_egnn_check2'
-entity: 'neuroai-scientist'
+logdir: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/'
+project: 'Structur_prediction_Experiments'
+run_name: 'pmhc_8k_egnn_big'
+entity: 'neuro-ai-scientist'
 
 # Training
-num_epochs: 1000
+num_epochs: 500
 device: 'cuda'
 gpus: 1
 
@@ -17,7 +17,6 @@ num_workers: 18
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
-
 
 # Dataset
 dataset: 'pmhc_8K'
@@ -40,11 +39,11 @@ generative_model_params:
 architecture: 'egnn'
 network_params: 
   # general network parameters
-  conditioned_on_time: True # modify to string
-  joint_dim: 32
-  hidden_dim: 64
-  num_layers: 3
-  # edges # TODO: need to check if that makes sense here
+  conditioned_on_time: True
+  joint_dim: 128
+  hidden_dim: 192
+  num_layers: 6
+  # edges  
   edge_embedding_dim: 8
   edge_cutoff_ligand: null
   edge_cutoff_pocket: 8.0
@@ -60,11 +59,11 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/checkpoints/best-model-epoch=epoch=420.ckpt' 
-num_samples: 1
+checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/checkpoints/best-model-epoch=epoch=96.ckpt' 
+num_samples: 10
 sample_batch_size: 10 # 10
 sampling_without_noise: False
-sample_savepath: './Experiments/Structure_prediction/Logs/pmhc8k_egnn_E/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/samples'
 
 
 
