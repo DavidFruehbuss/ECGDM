@@ -1,27 +1,26 @@
-# Logging
-logdir: './Experiments/Structure_prediction/Logs/pmhc_ponita_1/'
-project: 'Structur_prediction'
-run_name: 'SP_pmhc_ponita_1'
+# Logging Traing only
+logdir: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/'
+project: 'Structur_prediction_Experiments'
+run_name: 'pmhc_8k_ponita_big'
 entity: 'neuro-ai-scientist'
 
 # Training
-num_epochs: 1000
+num_epochs: 100
 device: 'cuda'
 gpus: 1
 
-batch_size: 16 # 64 or higher
+batch_size: 32 # 16, 64
 lr: 5.0e-4
-num_workers: 1
+num_workers: 18
 
 # Task
 task_params:
   protein_pocket_fixed: True
   features_fixed: True
-  position_encoding: True
 
 # Dataset
-dataset: 'pmhc'
-data_dir: '/content/drive/MyDrive/pmhc' # '/gpfs/work3/0/einf2380/data/pMHCI/features_output_folder/GNN/residue/230201/'
+dataset: 'pmhc_8K'
+data_dir: '/gpfs/work3/0/einf2380/data/tcrspec/'
 dataset_params:
   num_atoms: 20 # obtained from constant file
   num_residues: 20
@@ -29,7 +28,12 @@ dataset_params:
 
 generative_model: 'conditional_diffusion'
 generative_model_params:
-  timesteps: 500
+  timesteps: 1000
+  position_encoding: True
+  position_encoding_dim: 10
+  com_handling: 'peptide' # 'protein' 'both'
+  noise_scaling: null
+  high_noise_training: False
 
 architecture: 'ponita'
 network_params: 
@@ -41,8 +45,8 @@ network_params:
   # edges
   edge_embedding_dim: 8
   edge_cutoff_ligand: null
-  edge_cutoff_pocket: 0.8
-  edge_cutoff_interaction: 1.4
+  edge_cutoff_pocket: 8.0
+  edge_cutoff_interaction: 14.0
   # ponita specific
   orientation_options: '' # not_used, as_input, ...
   radius: null
@@ -54,8 +58,11 @@ network_params:
   multiple_readouts: False
 
 # Eval
-checkpoint: ''
+checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/checkpoints/best-model-epoch=epoch=847.ckpt' 
 num_samples: 10
+sample_batch_size: 10 # 10
+sampling_without_noise: False
+sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/samples'
 
 
 

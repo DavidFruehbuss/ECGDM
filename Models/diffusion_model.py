@@ -622,7 +622,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         error_mol = scatter_add(torch.sum((mol_target_p - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-        print(f'The starting RSME of random noise is {rmse.mean(0)}')
+        # print(f'The starting RSME of random noise is {rmse.mean(0)}')
 
         if self.com_handling == 'both':
             # old centering approach
@@ -636,7 +636,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-        print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
+        # print(f'The starting RSME of random noise at COM 0 is {rmse.mean(0)}')
 
         # # Sanaty check
         molecule_xx = molecule['x'].clone().detach()
@@ -646,7 +646,7 @@ class Conditional_Diffusion_Model(nn.Module):
 
         error_mol = scatter_add(torch.sum((mol_target_0 - molecule_xx[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-        print(f'Sanity check 1 (self): {rmse.mean(0)}')
+        # print(f'Sanity check 1 (self): {rmse.mean(0)}')
 
         # # epsilon for the sanity checks
         # eps_x_mol = torch.randn(size=(len(xh_mol), self.x_dim), device=device) * self.noise_scaling
@@ -783,7 +783,7 @@ class Conditional_Diffusion_Model(nn.Module):
             # Log sampling progress
             error_mol = scatter_add(torch.sum((mol_target_0 - xh_mol[:,:3])**2, dim=-1), molecule['idx'], dim=0)
             rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-            print(rmse.mean(0))
+            # print(rmse)
             # wandb.log({'RMSE now': rmse.mean(0).item()})
 
         # sample final molecules with t = 0 (p(x|z_0)) [all the above steps but for t = 0]
@@ -838,7 +838,7 @@ class Conditional_Diffusion_Model(nn.Module):
         # Log sampling progress
         error_mol = scatter_add(torch.sum((mol_target - xh_mol_final[:,:3])**2, dim=-1), molecule['idx'], dim=0)
         rmse = torch.sqrt(error_mol / (3 * molecule['size']))
-        print(f'Final RSME: {rmse.mean(0)}')
+        # print(f'Final RSME: {rmse.mean(0)}')
 
         sampled_structures = (xh_mol_final, xh_pro_final)
 
