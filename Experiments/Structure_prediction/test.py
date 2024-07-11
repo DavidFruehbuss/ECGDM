@@ -13,7 +13,6 @@ import sys
 import torch
 import pytorch_lightning as pl
 from torch_scatter import scatter_add
-import wandb
 
 # from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
 # from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
@@ -92,6 +91,8 @@ if __name__ == "__main__":
 
     for i in range(0, len(test_dataset), sample_batch_size):
 
+        if i + sample_batch_size >= len(test_dataset): continue
+
         start_time = time.time()
 
         # prepare peptide-MHC
@@ -131,7 +132,7 @@ if __name__ == "__main__":
         saved_samples['rmse_mean'] += [rmse_sample_mean[j] for j in range(sample_batch_size)]
         saved_samples['rmse_best'] += [rmse_sample_best[j] for j in range(sample_batch_size)]
 
-        # print(f'Time: {end_time - start_time}')
+        print(f'Time: {end_time - start_time}')
 
     end_time_total = time.time()
     time_total = end_time_total - start_time_total
