@@ -80,7 +80,7 @@ class NN_Model(nn.Module):
 
             # dimensions for ponita model
             in_channels_scalar = self.joint_dim
-            in_channels_vec = 0
+            in_channels_vec = 0 # shouldn't this be 1 or does it take the pos by default?
             # TODO: check how to properly use scalar vs vector outputs
             out_channels_scalar = self.joint_dim # updated features
             out_channels_vec = 1 # displacment vector
@@ -232,7 +232,7 @@ class NN_Model(nn.Module):
             # (4) TODO: choose whether to get protein_pocket corrdinates fixed (might need to modify ponita)
             if self.protein_pocket_fixed:
                 # raise NotImplementedError
-                protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.ones_like(protein_pocket_idx))).unsqueeze(1)
+                protein_pocket_fixed = torch.cat((torch.ones_like(molecule_idx), torch.zeros_like(protein_pocket_idx))).unsqueeze(1)
             else:
                 protein_pocket_fixed = None
 
