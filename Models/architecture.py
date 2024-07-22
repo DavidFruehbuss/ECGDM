@@ -80,7 +80,7 @@ class NN_Model(nn.Module):
 
             # dimensions for ponita model
             in_channels_scalar = self.joint_dim
-            in_channels_vec = 0 # shouldn't this be 1 or does it take the pos by default?
+            in_channels_vec = 1 # shouldn't this be 1 or does it take the pos by default?
             # TODO: check how to properly use scalar vs vector outputs
             out_channels_scalar = self.joint_dim # updated features
             out_channels_vec = 1 # displacment vector

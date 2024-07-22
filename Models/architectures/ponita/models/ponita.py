@@ -62,6 +62,7 @@ class PonitaFiberBundle(nn.Module):
         self.windowing_fn = PolynomialCutoff(radius)
 
         # Initial node embedding
+        print(input_dim)
         self.x_embedder = nn.Linear(input_dim, hidden_dim, False)
         
         # Make feedforward network
@@ -87,6 +88,7 @@ class PonitaFiberBundle(nn.Module):
         fiber_kernel_basis = self.fiber_basis_fn(graph.fiber_attr)
 
         # Initial feature embeding
+        print(graph.x.size)
         x = self.x_embedder(graph.x)
 
         # Interaction + readout layers
