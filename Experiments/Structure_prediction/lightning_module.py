@@ -93,21 +93,21 @@ class Structure_Prediction_Model(pl.LightningModule):
     # Data section
 
     def setup(self, stage):
-        if self.dataset == 'pmhc':
+        if self.dataset == 'pmhc_100K':
 
             if stage == 'fit':
-                self.train_dataset = Peptide_MHC_Dataset(self.data_dir, 'train')
-                self.val_dataset = Peptide_MHC_Dataset(self.data_dir, 'val')
+                self.train_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'train', self.dataset)
+                self.val_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'valid', self.dataset)
             elif stage == 'test':
-                self.test_dataset = Peptide_MHC_Dataset(self.data_dir, 'test')
+                self.test_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'test', self.dataset)
 
         elif self.dataset == 'pmhc_8K':
 
             if stage == 'fit':
-                self.train_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'train')
-                self.val_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'valid')
+                self.train_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'train', self.dataset)
+                self.val_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'valid', self.dataset)
             elif stage == 'test':
-                self.test_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'test')
+                self.test_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'test', self.dataset)
 
         elif self.dataset == 'ligand':
 
@@ -149,7 +149,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         '''
         function to unpack the molecule and it's protein
         '''
-        if self.dataset == 'pmhc' or self.dataset == 'pmhc_8K':
+        if self.dataset == 'pmhc_100K' or self.dataset == 'pmhc_8K':
 
             molecule = {
                 'x': data['peptide_positions'].to(self.device, FLOAT_TYPE),
