@@ -59,11 +59,11 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/checkpoints/best-model-epoch=epoch=96.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/checkpoints/best-model-epoch=epoch=488.ckpt' 
 num_samples: 10
 sample_batch_size: 10 # 10
 sampling_without_noise: False
-sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/'
 
 
 

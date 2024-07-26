@@ -1,7 +1,7 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small/'
+logdir: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small_tanhF/'
 project: 'Structur_prediction_Experiments'
-run_name: 'pmhc_8k_egnn_small'
+run_name: 'pmhc_8k_egnn_small_tanhF'
 entity: 'neuro-ai-scientist'
 
 # Training
@@ -50,7 +50,7 @@ network_params:
   edge_cutoff_interaction: 14.0
   # egnn specific
   attention: True
-  tanh: True
+  tanh: False
   norm_constant: 1
   inv_sublayers: 1
   sin_embedding: True
@@ -59,11 +59,11 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small/checkpoints/best-model-epoch=epoch=847.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small_tanhF/checkpoints/best-model-epoch=epoch=946.ckpt' 
 num_samples: 10
 sample_batch_size: 10 # 10
 sampling_without_noise: False
-sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small/samples'
+sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_small_tanhF/'
 
 
 
