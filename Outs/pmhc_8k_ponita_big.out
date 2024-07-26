@@ -1,0 +1,230 @@
+
+Modules based on Lua: Version 8.7.30  2023-07-21 17:13 -05:00
+    by Robert McLay mclay@tacc.utexas.edu
+
+module [options] sub-command [args ...]
+
+Help sub-commands:
+------------------
+  help                              prints this message
+  help                module [...]  print help message from module(s)
+
+Loading/Unloading sub-commands:
+-------------------------------
+  load | add          module [...]  load module(s)
+  try-load | try-add  module [...]  Add module(s), do not complain if not
+                                    found
+  del | unload        module [...]  Remove module(s), do not complain if not
+                                    found
+  swap | sw | switch  m1 m2         unload m1 and load m2
+  purge                             unload all modules
+  refresh                           reload aliases from current list of
+                                    modules.
+  update                            reload all currently loaded modules.
+
+Listing / Searching sub-commands:
+---------------------------------
+  list                              List loaded modules
+  list                s1 s2 ...     List loaded modules that match the
+                                    pattern
+  avail | av                        List available modules
+  avail | av          string        List available modules that contain
+                                    "string".
+  category | cat                    List all categories
+  category | cat      s1 s2 ...     List all categories that match the
+                                    pattern and display their modules
+  overview | ov                     List all available modules by short
+                                    names with number of versions
+  overview | ov       string        List available modules by short names
+                                    with number of versions that contain
+                                    "string"
+  spider                            List all possible modules
+  spider              module        List all possible version of that module
+                                    file
+  spider              string        List all module that contain the
+                                    "string".
+  spider              name/version  Detailed information about that version
+                                    of the module.
+  whatis              module        Print whatis information about module
+  keyword | key       string        Search all name and whatis that contain
+                                    "string".
+
+Searching with Lmod:
+--------------------
+  All searching (spider, list, avail, keyword) support regular expressions:
+  
+
+  -r spider           '^p'          Finds all the modules that start with
+                                    `p' or `P'
+  -r spider           mpi           Finds all modules that have "mpi" in
+                                    their name.
+  -r spider           'mpi$         Finds all modules that end with "mpi" in
+                                    their name.
+
+Handling a collection of modules:
+--------------------------------
+  save | s                          Save the current list of modules to a
+                                    user defined "default" collection.
+  save | s            name          Save the current list of modules to
+                                    "name" collection.
+  reset                             The same as "restore system"
+  restore | r                       Restore modules from the user's
+                                    "default" or system default.
+  restore | r         name          Restore modules from "name" collection.
+  restore             system        Restore module state to system defaults.
+  savelist                          List of saved collections.
+  describe | mcc      name          Describe the contents of a module
+                                    collection.
+  disable             name          Disable (i.e. remove) a collection.
+
+Deprecated commands:
+--------------------
+  getdefault          [name]        load name collection of modules or
+                                    user's "default" if no name given.
+                                    ===> Use "restore" instead <====
+  setdefault          [name]        Save current list of modules to name if
+                                    given, otherwise save as the default
+                                    list for you the user.
+                                    ===> Use "save" instead. <====
+
+Miscellaneous sub-commands:
+---------------------------
+  is-loaded           modulefile    return a true status if module is loaded
+  is-avail            modulefile    return a true status if module can be
+                                    loaded
+  show                modulefile    show the commands in the module file.
+  use [-a]            path          Prepend or Append path to MODULEPATH.
+  unuse               path          remove path from MODULEPATH.
+  tablelist                         output list of active modules as a lua
+                                    table.
+
+Important Environment Variables:
+--------------------------------
+  LMOD_COLORIZE                     If defined to be "YES" then Lmod prints
+                                    properties and warning in color.
+
+    --------------------------------------------------------------------------
+
+Lmod Web Sites
+
+  Documentation:    https://lmod.readthedocs.org
+  GitHub:           https://github.com/TACC/Lmod
+  SourceForge:      https://lmod.sf.net
+  TACC Homepage:    https://www.tacc.utexas.edu/research-development/tacc-projects/lmod
+
+  To report a bug please read https://lmod.readthedocs.io/en/latest/075_bug_reporting.html
+    --------------------------------------------------------------------------
+
+
+Lmod has detected the following error: These module(s) or extension(s) exist
+but cannot be loaded as requested: "Anaconda3/2021.05"
+   Try: "module spider Anaconda3/2021.05" to see how to load the module(s).
+
+
+
+Optimizing:   0%|          | 0/100 [00:00<?, ?it/s]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 8.772]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 8.922]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 6.861]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 6.189]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.915]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.739]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.609]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.509]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.432]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.371]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.322]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.282]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.250]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.223]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.200]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.181]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.164]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.150]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.138]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.127]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.117]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.108]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.100]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.092]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.085]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.078]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.071]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.065]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.059]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.053]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.047]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.042]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.036]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.031]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.026]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.021]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.016]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.012]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.008]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.004]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 5.000]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.996]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.993]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.990]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.988]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.985]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.983]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.980]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.979]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.977]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.975]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.973]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.972]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.971]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.969]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.968]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.967]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.966]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.965]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.964]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.963]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.962]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.962]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.961]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.960]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.959]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.959]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.958]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.957]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.957]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.956]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.955]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.955]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.954]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.953]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.953]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.952]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.951]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.951]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.950]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.949]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.949]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.948]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.947]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.947]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.946]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.945]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.945]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.944]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.943]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.942]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.942]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.941]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.940]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.939]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.938]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.937]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.936]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.935]Optimizing:   0%|          | 0/100 [00:00<?, ?it/s, mean total energy: 4.935]Optimizing: 100%|██████████| 100/100 [00:00<00:00, 1221.13it/s, mean total energy: 4.935]
+/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/lazy.py:180: UserWarning: Lazy modules are a new feature under heavy development so changes to the API or functionality can happen at any moment.
+  warnings.warn('Lazy modules are a new feature under heavy development '
+140
+wandb: Currently logged in as: david-fruehbuss (neuro-ai-scientist). Use `wandb login --relogin` to force relogin
+wandb: - Waiting for wandb.init()...wandb: \ Waiting for wandb.init()...wandb: wandb version 0.17.4 is available!  To upgrade, please run:
+wandb:  $ pip install wandb --upgrade
+wandb: Tracking run with wandb version 0.17.1
+wandb: Run data is saved locally in ./Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/wandb/run-20240711_205154-l5m3ytwy
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run pmhc_8k_ponita_big
+wandb: ⭐️ View project at https://wandb.ai/neuro-ai-scientist/Structur_prediction_Experiments
+wandb: 🚀 View run at https://wandb.ai/neuro-ai-scientist/Structur_prediction_Experiments/runs/l5m3ytwy
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/callbacks/model_checkpoint.py:604: UserWarning: Checkpoint directory Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/checkpoints exists and is not empty.
+  rank_zero_warn(f"Checkpoint directory {dirpath} exists and is not empty.")
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/utilities/model_summary/model_summary.py:411: UserWarning: A layer with UninitializedParameter was found. Thus, the total number of parameters detected may be inaccurate.
+  warning_cache.warn(
+
+  | Name       | Type                        | Params
+-----------------------------------------------------------
+0 | neural_net | NN_Model                    | 2.4 M 
+1 | model      | Conditional_Diffusion_Model | 2.4 M 
+-----------------------------------------------------------
+2.4 M     Trainable params
+2.0 K     Non-trainable params
+2.4 M     Total params
+9.446     Total estimated model params size (MB)
+SLURM auto-requeueing enabled. Setting signal handlers.
+/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/utils/data/dataloader.py:554: UserWarning: This DataLoader will create 18 worker processes in total. Our suggested max number of worker in current system is 16, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(_create_warning_msg(
+Sanity Checking: 0it [00:00, ?it/s]Sanity Checking:   0%|          | 0/2 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/2 [00:00<?, ?it/s]<built-in method size of Tensor object at 0x14a9400c9800>
+Traceback (most recent call last):
+  File "/gpfs/home4/dfruhbuss/ECGDM/Experiments/Structure_prediction/train.py", line 83, in <module>
+    trainer.fit(model)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 603, in fit
+    call._call_and_handle_interrupt(
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/call.py", line 38, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 645, in _fit_impl
+    self._run(model, ckpt_path=self.ckpt_path)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 1098, in _run
+    results = self._run_stage()
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 1177, in _run_stage
+    self._run_train()
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 1190, in _run_train
+    self._run_sanity_check()
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 1262, in _run_sanity_check
+    val_loop.run()
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/loops/loop.py", line 199, in run
+    self.advance(*args, **kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/loops/dataloader/evaluation_loop.py", line 152, in advance
+    dl_outputs = self.epoch_loop.run(self._data_fetcher, dl_max_batches, kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/loops/loop.py", line 199, in run
+    self.advance(*args, **kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/loops/epoch/evaluation_epoch_loop.py", line 137, in advance
+    output = self._evaluation_step(**kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/loops/epoch/evaluation_epoch_loop.py", line 234, in _evaluation_step
+    output = self.trainer._call_strategy_hook(hook_name, *kwargs.values())
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/trainer/trainer.py", line 1480, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/pytorch_lightning/strategies/strategy.py", line 390, in validation_step
+    return self.model.validation_step(*args, **kwargs)
+  File "/gpfs/home4/dfruhbuss/ECGDM/Experiments/Structure_prediction/lightning_module.py", line 207, in validation_step
+    loss, info = self.model(mol_pro_batch)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/gpfs/home4/dfruhbuss/ECGDM/Models/diffusion_model.py", line 133, in forward
+    epsilon_hat_mol, epsilon_hat_pro = self.neural_net(z_t_mol, z_t_pro, t, molecule['idx'], protein_pocket['idx'], molecule_pos)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/gpfs/home4/dfruhbuss/ECGDM/Models/architecture.py", line 240, in forward
+    h_new, x_new = self.ponita(batched_graph)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/gpfs/home4/dfruhbuss/ECGDM/Models/architectures/ponita/models/ponita.py", line 92, in forward
+    x = self.x_embedder(graph.x)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/dfruhbuss/.conda/envs/ecgdm/envs/mol/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: mat1 and mat2 shapes cannot be multiplied (72576x139 and 140x192)
+wandb: - 0.008 MB of 0.008 MB uploadedwandb: \ 0.008 MB of 0.021 MB uploadedwandb: | 0.021 MB of 0.021 MB uploadedwandb: 🚀 View run pmhc_8k_ponita_big at: https://wandb.ai/neuro-ai-scientist/Structur_prediction_Experiments/runs/l5m3ytwy
+wandb: ⭐️ View project at: https://wandb.ai/neuro-ai-scientist/Structur_prediction_Experiments
+wandb: Synced 6 W&B file(s), 0 media file(s), 0 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_ponita_big/wandb/run-20240711_205154-l5m3ytwy/logs
+srun: error: gcn10: task 0: Exited with exit code 1
+srun: Terminating StepId=6953564.0
+
+JOB STATISTICS
+==============
+Job ID: 6953564
+Cluster: snellius
+User/Group: dfruhbuss/dfruhbuss
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:37
+CPU Efficiency: 3.32% of 00:18:36 core-walltime
+Job Wall-clock time: 00:01:02
+Memory Utilized: 417.99 MB
+Memory Efficiency: 0.34% of 120.00 GB

@@ -44,7 +44,7 @@ class Backbone_Dataset(Dataset):
             mhc_frames_data = torch.tensor(mhc['backbone_rigid_tensor'][:]) # N * 4 * 4
 
             peptide_7 = Rigid.from_tensor_4x4(frames_data).to_tensor_7()
-            mhc_7 = Rigid.from_tensor_4x4(mhc_frames_data   ).to_tensor_7()
+            mhc_7 = Rigid.from_tensor_4x4(mhc_frames_data).to_tensor_7()
 
             sidechain_train = torch.cat((peptide_7[:,4:], mhc_7[:,4:]), dim=0) # M * 3
             sidechain_q4_labels = peptide_7[:,:4] # N * 4

@@ -5,7 +5,7 @@ run_name: 'pmhc_8k_gnn_small'
 entity: 'neuro-ai-scientist'
 
 # Training
-num_epochs: 100
+num_epochs: 1000
 device: 'cuda'
 gpus: 1
 
