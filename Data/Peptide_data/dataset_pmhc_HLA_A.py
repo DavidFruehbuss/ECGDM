@@ -14,9 +14,12 @@ from Data.Peptide_data.openfold_utils import Rigid
 
 class Peptide_MHC_8K_Dataset(Dataset):
      
-    def __init__(self, datadir, split='train'):
+    def __init__(self, datadir, split='train', dataset='pmhc_8K'):
 
-        self.hdf5_path = f'{datadir}BA_pMHCI_{split}_fold1.hdf5'
+        if dataset == 'pmhc_100K':
+            self.hdf5_path = f'{datadir}100k_{split}.hdf5'
+        else:
+            self.hdf5_path = f'{datadir}BA_pMHCI_{split}_fold1.hdf5'
 
         with h5py.File(self.hdf5_path, 'r') as f5:
             self.entry_names = list(f5.keys())
