@@ -215,6 +215,8 @@ class Conditional_Diffusion_Model(nn.Module):
                 # old centering approach
                 xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
                 xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+            elif self.com_handling == 'no_COM':
+                dumy_variable = 0
             else:
                 # data is translated to 0, COM noise added and again translated to 0
                 mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
@@ -231,6 +233,8 @@ class Conditional_Diffusion_Model(nn.Module):
                 # old centering approach
                 eps_x_mol = eps_x_mol - scatter_mean(eps_x_mol, molecule['idx'], dim=0)[molecule['idx']]
                 eps_x_pro = torch.zeros(size=(len(xh_pro), self.x_dim), device=device)
+            else:
+                dumy_variable = 0
 
             if self.features_fixed:
 
@@ -253,6 +257,8 @@ class Conditional_Diffusion_Model(nn.Module):
             z_t_pro = xh_pro.clone().detach()
 
             if self.com_handling == 'both':
+                dumy_variable = 0
+            elif self.com_handling == 'no_COM':
                 dumy_variable = 0
             else:
                 # data is translated to 0, COM noise added and again translated to 0 (turn off for old centering approach)
@@ -628,6 +634,8 @@ class Conditional_Diffusion_Model(nn.Module):
             # old centering approach
             xh_mol[:,:self.x_dim] = xh_mol[:,:self.x_dim] - scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)[molecule['idx']]
             xh_pro[:,:self.x_dim] = xh_pro[:,:self.x_dim] - scatter_mean(xh_pro[:,:self.x_dim], protein_pocket['idx'], dim=0)[protein_pocket['idx']]
+        elif self.com_handling == 'no_COM':
+                dumy_variable = 0
         else:
             # data is translated to 0, COM noise added and again translated to 0
             mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
@@ -767,6 +775,8 @@ class Conditional_Diffusion_Model(nn.Module):
 
             if self.com_handling == 'both':
                 dumy_variable = 0
+            elif self.com_handling == 'no_COM':
+                dumy_variable = 0
             else:
                 # project both pocket and peptide to 0 COM again (only mol mean changes)
                 mean = scatter_mean(xh_mol[:,:self.x_dim], molecule['idx'], dim=0)
@@ -802,6 +812,8 @@ class Conditional_Diffusion_Model(nn.Module):
         xh_pro_final = xh_pro.detach().clone()
 
         if self.com_handling == 'both':
+                dumy_variable = 0
+        elif self.com_handling == 'no_COM':
                 dumy_variable = 0
         else:
             # project both pocket and peptide to 0 COM again (only mol mean changes)
@@ -848,6 +860,8 @@ class Conditional_Diffusion_Model(nn.Module):
         return sampled_structures
     
     def safe_pdbs(self, pos, molecule, run_id, time_step):
+
+        return # switched off if pdbs are not available
 
         if not self.features_fixed:
             # idicates ligand (not peptide) dataset
