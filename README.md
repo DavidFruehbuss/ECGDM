@@ -1,10 +1,12 @@
-# ECGDM
 
-![Project Image](Diffusion%20Chain.png)
+# ECGDM
+Structure-based Equivarinat Guided Diffusion Models for cancer immunotherapy
+
+![Project Image](./Diffusion%20Chain.png)
 
 ## Overview
 
-Equivariant Diffusion Model for peptide-MHC structure prediction
+Equivariant Diffusion Model for generating peptide-MHC structures
 
 ## Installation
 
