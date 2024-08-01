@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    desired_directory = '/gpfs/home4/dfruhbuss/ECGDM/'
+    desired_directory = '/gpfs/home4/dfruhbus/ECGDM/'
     os.chdir(desired_directory)
     sys.path.insert(0, desired_directory)
     from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
@@ -70,10 +70,13 @@ if __name__ == "__main__":
     ## calculate the test_dataset variance
     var = []
     for data in test_dataset:
-        if args.dataset == 'pmhc' or args.dataset == 'pmhc_8K':
-            pos = data['peptide_positions'].to(torch.float32)
-        else:
-            pos = data['lig_coords'].to(torch.float32)
+        pos = data['peptide_positions'].to(torch.float32)
+
+        # if args.dataset == 'pmhc_100K' or args.dataset == 'pmhc_8K':
+        #     pos = data['peptide_positions'].to(torch.float32)
+        # else:
+        #     pos = data['lig_coords'].to(torch.float32)
+
         var += [torch.sum((pos - torch.mean(pos, dim=0))**2, dim=0) / len(pos)]
     dataset_variance = sum(var) / len(var)
     print(dataset_variance)
@@ -89,7 +92,11 @@ if __name__ == "__main__":
 
     start_time_total = time.time()
 
-    for i in range(0, len(test_dataset), sample_batch_size):
+    # len(test_dataset)
+    print(len(test_dataset))
+    # temporary for spedtest ToDo: Modify Back
+
+    for i in range(0, 20, sample_batch_size):
 
         if i + sample_batch_size >= len(test_dataset): continue
 
@@ -97,10 +104,13 @@ if __name__ == "__main__":
 
         # prepare peptide-MHC
         mol_pro_list = [test_dataset[i+j] for _ in range(num_samples) for j in range(sample_batch_size)]
-        if args.dataset == 'pmhc' or args.dataset == 'pmhc_8K':
-            mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
-        else:
-            mol_pro_samples = ProcessedLigandPocketDataset.collate_fn(mol_pro_list)
+
+        mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
+
+        # if args.dataset == 'pmhc_100K' or args.dataset == 'pmhc_8K':
+        #     mol_pro_samples = Peptide_MHC_Dataset.collate_fn(mol_pro_list)
+        # else:
+        #     mol_pro_samples = ProcessedLigandPocketDataset.collate_fn(mol_pro_list)
 
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
