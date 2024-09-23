@@ -40,6 +40,8 @@ To set up the environment, please follow the instructions carefully. **Ensure th
    pip install h5py
    pip3 install pytorch_lightning==1.8.6
    conda install -c conda-forge biopython=1.79
+   pip install prody
+   pip install pandas
    ```
 
 ## Datasets
