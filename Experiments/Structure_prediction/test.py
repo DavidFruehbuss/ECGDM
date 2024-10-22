@@ -96,7 +96,7 @@ if __name__ == "__main__":
     print(len(test_dataset))
     # temporary for spedtest ToDo: Modify Back
 
-    for i in range(0, 20, sample_batch_size):
+    for i in range(0, len(test_dataset), sample_batch_size):
 
         if i + sample_batch_size >= len(test_dataset): continue
 

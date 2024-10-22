@@ -9,6 +9,7 @@ INT_TYPE = torch.int64
 from Data.Ligand_data.dataset_ligand import ProcessedLigandPocketDataset
 from Data.Peptide_data.dataset_pmhc import Peptide_MHC_Dataset
 from Data.Peptide_data.dataset_pmhc_HLA_A import Peptide_MHC_8K_Dataset
+from Data.Peptide_data.dataset_8k_xray import PDB_Dataset
 
 from Models.diffusion_model import Conditional_Diffusion_Model
 from Models.architecture import NN_Model
@@ -109,6 +110,14 @@ class Structure_Prediction_Model(pl.LightningModule):
             elif stage == 'test':
                 self.test_dataset = Peptide_MHC_8K_Dataset(self.data_dir, 'test', self.dataset)
 
+        elif self.dataset == 'pmhc_8K_xray':
+
+            if stage == 'fit':
+                self.train_dataset = PDB_Dataset(self.data_dir, 'train')
+                self.val_dataset = PDB_Dataset(self.data_dir, 'val')
+            elif stage == 'test':
+                self.test_dataset = PDB_Dataset(self.data_dir, 'test')
+
         elif self.dataset == 'ligand':
 
             if stage == 'fit':
@@ -149,7 +158,7 @@ class Structure_Prediction_Model(pl.LightningModule):
         '''
         function to unpack the molecule and it's protein
         '''
-        if self.dataset == 'pmhc_100K' or self.dataset == 'pmhc_8K':
+        if self.dataset in ['pmhc_100K','pmhc_8K','pmhc_8K_xray']:
 
             molecule = {
                 'x': data['peptide_positions'].to(self.device, FLOAT_TYPE),
