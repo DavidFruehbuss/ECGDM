@@ -1,0 +1,17 @@
+#!/bin/bash
+
+#SBATCH --partition=gpu
+#SBATCH --gpus=1
+#SBATCH --job-name=test_pmhc_8K_xray_aligned
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=16
+#SBATCH --time=08:00:00
+#SBATCH --output=../Outs/pmhc_8K_aligned_egnn_xray_8
+module purge
+module 2021
+module load Anaconda3/2021.05
+
+source activate mol
+
+cd $HOME/ECGDM/
+srun python -u Experiments/Structure_prediction/test.py --config Experiments/Structure_prediction/configs/pmhc_8K_xray_aligned_egnn_8.yml

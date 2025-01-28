@@ -6,7 +6,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --time=05:00:00
-#SBATCH --output=../Outs/train_outs_new/pmhc_8k_egnn_small_tanhF.out
+#SBATCH --output=../Outs/train_outs_new/pmhc_8k_egnn_small_no_COM.out
 
 module purge
 module 2021
@@ -15,4 +15,4 @@ module load Anaconda3/2021.05
 source activate mol
 
 cd $HOME/ECGDM/
-srun python -u Experiments/Structure_prediction/train.py --config Experiments/Structure_prediction/configs/pmhc_8K_egnn_small.yml
+srun python -u Experiments/Structure_prediction/train.py --config Experiments/Structure_prediction/configs/pmhc_8K_egnn_small_2.yml
