@@ -74,11 +74,13 @@ class Structure_Prediction_Model(pl.LightningModule):
             generative_model_params.timesteps,
             generative_model_params.position_encoding,
             generative_model_params.com_handling,
+            generative_model_params.sampling_stepsize,
             generative_model_params.noise_scaling,
             generative_model_params.high_noise_training,
             dataset_params.num_atoms,
             dataset_params.num_residues,
             dataset_params.norm_values,
+            dataset,
         )
         
         self.dataset = dataset
@@ -114,7 +116,7 @@ class Structure_Prediction_Model(pl.LightningModule):
 
             if stage == 'fit':
                 self.train_dataset = PDB_Dataset(self.data_dir, 'train')
-                self.val_dataset = PDB_Dataset(self.data_dir, 'val')
+                self.val_dataset = PDB_Dataset(self.data_dir, 'valid')
             elif stage == 'test':
                 self.test_dataset = PDB_Dataset(self.data_dir, 'test')
 

@@ -1,11 +1,11 @@
 # Logging Traing only
-logdir: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/'
+logdir: "./Experiments/Structure_prediction/Logs_Experiments/fold_3/"
 project: 'Structur_prediction_Experiments'
-run_name: 'pmhc_8k_egnn_big'
+run_name: 'pmhc_8K_xray_aligned_egnn_10'
 entity: 'neuro-ai-scientist'
 
 # Training
-num_epochs: 500
+num_epochs: 1000
 device: 'cuda'
 gpus: 1
 
@@ -19,8 +19,8 @@ task_params:
   features_fixed: True
 
 # Dataset
-dataset: 'pmhc_8K'
-data_dir: '/gpfs/work3/0/einf2380/data/tcrspec/'
+data_dir: "/gpfs/home4/dfruhbus/ECGDM/Data/Peptide_data/pmhc_xray_8K_aligned/folds/fold_3/"
+dataset: 'pmhc_8K_xray'
 dataset_params:
   num_atoms: 20 # obtained from constant file
   num_residues: 20
@@ -31,7 +31,7 @@ generative_model_params:
   timesteps: 1000
   position_encoding: True
   position_encoding_dim: 10
-  com_handling: 'peptide' # 'protein' 'both'
+  com_handling: 'peptide' # 'protein' 'both' 'peptide' 'no_COM'
   noise_scaling: null
   high_noise_training: False
 
@@ -40,10 +40,10 @@ architecture: 'egnn'
 network_params: 
   # general network parameters
   conditioned_on_time: True
-  joint_dim: 128
-  hidden_dim: 192
-  num_layers: 6
-  # edges  
+  joint_dim: 32
+  hidden_dim: 64
+  num_layers: 3
+  # edges
   edge_embedding_dim: 8
   edge_cutoff_ligand: null
   edge_cutoff_pocket: 8.0
@@ -59,11 +59,11 @@ network_params:
   reflection_equivariant: False
 
 # Eval
-checkpoint: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/checkpoints/best-model-epoch=epoch=488.ckpt' 
+checkpoint: './Experiments/Structure_prediction/Logs_Experiments/fold_3/checkpoints/best-model-epoch=epoch=889.ckpt' 
 num_samples: 10
 sample_batch_size: 10 # 10
 sampling_without_noise: False
-sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/pmhc_8k_egnn_big/'
+sample_savepath: './Experiments/Structure_prediction/Logs_Experiments/fold_3/samples'
 
 
 

@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch_scatter import scatter_add, scatter_mean
 
 from Models.noise_schedule import Noise_Schedule
-from Data.Peptide_data.utils import create_new_pdb
+from Data.Peptide_data.utils import create_new_pdb, create_new_pdb_hdf5
 
 """
 This file implements the generative framework [diffusion model] for the model
@@ -76,11 +76,13 @@ class Conditional_Diffusion_Model(nn.Module):
         timesteps: int,
         position_encoding: bool,
         com_handling: str,
+        sampling_stepsize: int,
         noise_scaling: int,
         high_noise_training: bool,
         num_atoms: int,
         num_residues: int,
-        norm_values: list
+        norm_values: list,
+        dataset: str,
     ):
         """
         Parameters:
@@ -95,8 +97,10 @@ class Conditional_Diffusion_Model(nn.Module):
         self.features_fixed = features_fixed
         self.position_encoding = position_encoding
         self.com_handling = com_handling
+        self.sampling_stepsize = sampling_stepsize
 
         # dataset info
+        self.dataset = dataset
         self.num_atoms = num_atoms
         self.num_residues = num_residues
         self.norm_values = norm_values
@@ -585,8 +589,8 @@ class Conditional_Diffusion_Model(nn.Module):
         num_samples = len(molecule['size'])
 
         # Safe the correct structure pdb
-        target_pMHC = torch.cat((molecule['x'], molecule['h']), dim=1)
-        self.safe_pdbs(target_pMHC, molecule, run_id, time_step='target')
+        # target_pMHC = torch.cat((molecule['x'], molecule['h']), dim=1)
+        # self.safe_pdbs(target_pMHC, molecule, run_id, time_step='target')
 
         # Record protein_pocket center of mass before
         protein_pocket_com_before = scatter_mean(protein_pocket['x'], protein_pocket['idx'], dim=0)
@@ -726,17 +730,17 @@ class Conditional_Diffusion_Model(nn.Module):
         ##################
 
 
-        # Iterativly denoise stepwise for t = T,...,1
-        for s in reversed(range(0,max_T)):
+        # Iterativly denoise stepwise for t = T,...,1; stepsize default is 1
+        for s in reversed(range(0, max_T, self.sampling_stepsize)):
 
             # if s < max_T-4: raise NameError
 
-            if s % 100 == 0 or s > 990:
-                self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
+            # if s % 100 == 0 or s > 990:
+            #     self.safe_pdbs(xh_mol, molecule, run_id, time_step=s)
 
             # time arrays
             s_array = torch.full((num_samples, 1), fill_value=s, device=device)
-            t_array = s_array + 1
+            t_array = s_array + self.sampling_stepsize
             s_array_norm = s_array / self.T
             t_array_norm = t_array / self.T
 
@@ -861,12 +865,6 @@ class Conditional_Diffusion_Model(nn.Module):
     
     def safe_pdbs(self, pos, molecule, run_id, time_step):
 
-        return # switched off if pdbs are not available
-
-        if not self.features_fixed:
-            # idicates ligand (not peptide) dataset
-            return
-
         for i in range(len(molecule['size'])):
             # (1) extract the peptide position
             pos = pos[:,:3]
@@ -880,6 +878,13 @@ class Conditional_Diffusion_Model(nn.Module):
             else:
                 graph_name = molecule['graph_name'][i]
 
-
+            if self.dataset in ['pmhc_100K','pmhc_8K']:
             # samples will be overwritten because we have multiple samples (sampling BS=1 is okay)
-            create_new_pdb(peptide_pos, peptide_idx, graph_name, run_id, time_step=time_step) # peptide_pos
+                create_new_pdb(peptide_pos, peptide_idx, graph_name, run_id, time_step=time_step) # peptide_pos
+
+            elif self.dataset == 'pmhc_8K_xray':
+
+                create_new_pdb_hdf5(peptide_pos, peptide_idx, graph_name, run_id, time_step=time_step)
+        
+            else: 
+                return

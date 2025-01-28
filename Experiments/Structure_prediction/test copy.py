@@ -31,16 +31,21 @@ if __name__ == "__main__":
     # read in config
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
+    parser.add_argument('--data_dir', type=str, help='Path to the data directory')  # New argument
+    parser.add_argument('--logdir', type=str, help='Path to the log directory')  # New argument
     args = parser.parse_args()
 
     with open(args.config) as f:
         config = yaml.safe_load(f)
 
-    args_dict = args.__dict__
+    args_dict['data_dir'] = args.data_dir
+    args_dict['logdir'] = args.logdir
+
     for key, value in config.items():
+        # Only set YAML values if they aren't overridden via the command line
         if isinstance(value, dict):
-            args_dict[key] = Namespace(**value)
-        else:
+            config[key] = Namespace(**value)
+        if not args_dict.get(key):  # Only update if no CLI override exists
             args_dict[key] = value
 
     num_samples = args.num_samples
@@ -116,12 +121,7 @@ if __name__ == "__main__":
         # sample new peptide-MHC structures using trained model
         mol_pro_batch = lightning_model.get_molecule_and_protein(mol_pro_samples)
         molecule, protein_pocket = mol_pro_batch
-
-        print(f'Prior to sampling time {time.time() - start_time}')
-
         xh_mol_final, xh_pro_final = lightning_model.model.sample_structure(num_samples, molecule, protein_pocket, args.sampling_without_noise, args.run_name)
-
-        print(f'After sampling time {time.time() - start_time}')
 
         # Safe resulting structures
         size_tuple = tuple(molecule['size'].tolist())
@@ -165,16 +165,10 @@ if __name__ == "__main__":
     print(f'Mean RMSE across all mean/best sample: mean {round(rmse_mean.item(),3)}, best {round(rmse_best.item(),3)}')
     print(f'This took {time_total} seconds for 1000*10 samples')
 
-    start_time_saving = time.time()
-
     # Serialize dictionary with pickle
     pickled_data = pickle.dumps(saved_samples)
 
     # Compress pickled data
     with gzip.open(f'{sample_savepath}.pkl.gz', 'wb') as f:
         f.write(pickled_data)
-
-    end_time_saving = time.time()
-    time_saving = end_time_saving - start_time_saving
-    print(f'Time to save data: {time_saving} s')
 

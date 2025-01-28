@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from dataset_8k_xray import PDB_Dataset
 
 def test_dataset_loading():
-    datadir = '/gpfs/home4/dfruhbus/ECGDM/Data/Peptide_data/pmhc_xray_8K/'  # Adjusted data directory
+    datadir = '/gpfs/home4/dfruhbus/ECGDM/Data/Peptide_data/pmhc_xray_8K_aligned/'  # Adjusted data directory
     dataset = PDB_Dataset(datadir=datadir, split='val')  # Load the dataset
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 

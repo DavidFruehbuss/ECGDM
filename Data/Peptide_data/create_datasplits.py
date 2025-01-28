@@ -2,11 +2,11 @@ import os
 import h5py
 import numpy as np
 
-source_dir = '/gpfs/home4/dfruhbus/ECGDM/Data/Peptide_data/pmhc_xray_8K/'  # Added trailing slash
-output_file = os.path.join(source_dir, 'val.hdf5')  # Output file named train.hdf5
+source_dir = '/gpfs/home4/dfruhbus/ECGDM/Data/Peptide_data/pmhc_xray_8K_aligned/'  # Added trailing slash
+output_file = os.path.join(source_dir, 'test.hdf5')  # Output file named train.hdf5
 
-# source_filenames = [f'combined_cluster{i}_rotated.hdf5' for i in range(8)]
-source_filenames = [f'combined_cluster{8}_rotated.hdf5']
+# source_filenames = [f'combined_cluster{i}.hdf5' for i in range(8)]
+source_filenames = [f'combined_cluster{9}.hdf5']
 
 def merge_hdf5_files(source_dir, source_filenames, output_file):
     all_entries = []

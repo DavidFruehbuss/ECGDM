@@ -83,4 +83,3 @@ python -u Experiments/Structure_prediction/test.py --config Experiments/Structur
 ### Additional Notes
 
 - **Please** ensure you follow the installation order as described to avoid potential conflicts.
-- **Feel free** to adjust the instructions based on your specific project requirements and details.

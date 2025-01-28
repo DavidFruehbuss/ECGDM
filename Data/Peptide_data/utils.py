@@ -8,6 +8,28 @@ import re
 import glob
 import os
 import pickle
+import h5py
+from io import StringIO
+
+def create_new_pdb_hdf5(
+        peptide, peptide_idx, graph_name, run_id, time_step
+):
+    hdf5_file = h5py.File('./Data/Peptide_data/pmhc_xray_8K_aligned/folds/fold_1/test.hdf5', 'r')
+        
+    pdb_names = hdf5_file['pdb_names'][:]
+    pdb_strings = hdf5_file['pdb_strings'][:]
+    pdb_string = pdb_strings[pdb_names.tolist().index(graph_name)].decode('utf-8')
+
+    # Create a temporary file or use StringIO to make the string readable by parser
+    pdb_fh = StringIO(pdb_string)
+    
+    pdb_output_path = f'./Data/Peptide_data/sampled_pmhcs/{run_id}/{graph_name}_{time_step}.pdb'
+
+    directory = os.path.dirname(pdb_output_path)
+    if not os.path.exists(directory):
+         os.makedirs(directory)
+
+    write_updated_peptide_coords_pdb(peptide, peptide_idx, pdb_fh, pdb_output_path)
 
 def create_new_pdb(
         peptide, peptide_idx, graph_name, run_id, time_step

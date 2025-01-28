@@ -1,0 +1,91 @@
+import argparse
+from argparse import Namespace
+from pathlib import Path
+import yaml
+
+import os
+import sys
+
+import torch
+import pytorch_lightning as pl
+# from ECGDM.Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+
+if __name__ == "__main__":
+	
+    desired_directory = '/gpfs/home4/dfruhbus/ECGDM/'
+    os.chdir(desired_directory)
+    sys.path.insert(0, desired_directory)
+    from Experiments.Structure_prediction.lightning_module import Structure_Prediction_Model
+
+    # seed = 42
+    # torch.manual_seed(seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+
+    # read in config
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, required=True)
+    parser.add_argument('--data_dir', type=str, help='Path to the data directory')  # New argument
+    parser.add_argument('--logdir', type=str, help='Path to the log directory')  # New argument
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        config = yaml.safe_load(f)
+
+    print(f"Received data_dir: {args.data_dir}")
+    print(f"Received logdir: {args.logdir}")
+
+    args_dict['data_dir'] = args.data_dir
+    args_dict['logdir'] = args.logdir
+
+    for key, value in config.items():
+        # Only set YAML values if they aren't overridden via the command line
+        if isinstance(value, dict):
+            config[key] = Namespace(**value)
+        if not args_dict.get(key):  # Only update if no CLI override exists
+            args_dict[key] = value
+
+    # lightning module
+    model = Structure_Prediction_Model(
+                args.dataset,
+                args.data_dir,
+                args.dataset_params,
+                args.task_params,
+                args.generative_model,
+                args.generative_model_params,
+                args.architecture,
+                args.network_params,
+                args.batch_size,
+                args.lr,
+                args.num_workers,
+                args.device
+    )
+
+    # wandb logger
+    logger = pl.loggers.WandbLogger(
+        save_dir=args.logdir,
+        project=args.project,
+        name=args.run_name,
+        entity=args.entity
+    )
+
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        dirpath=Path(args.logdir, 'checkpoints'),
+        filename="best-model-epoch={epoch:02d}",
+        monitor="error_mol_val",
+        save_top_k=1,
+        save_last=True,
+        mode="min",
+    )
+
+    # setup trainer
+    trainer = pl.Trainer(
+        max_epochs=args.num_epochs,
+        logger=logger,
+        callbacks=[checkpoint_callback],
+        enable_progress_bar=True,
+        accelerator='gpu', devices=args.gpus,
+    )
+
+    # train
+    trainer.fit(model)
